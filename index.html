@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+
+	<title>¡¡Lotería!!</title>
+
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+	<!-- Favicon -->
+	<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+	<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+	<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+	<link rel="manifest" href="/site.webmanifest">
+	<link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+	<meta name="msapplication-TileColor" content="#00aba9">
+	<meta name="theme-color" content="#ffffff">
+
+	<style>
+		@import url('https://fonts.googleapis.com/css2?family=Protest+Riot&display=swap');
+
+		* {
+			box-sizing: border-box;
+		}
+
+		html, body {
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			background-color: black;
+
+			height: 100vh;
+			width: 100vw;
+
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			justify-content: center;
+			align-items: center;
+
+			overflow: hidden;
+		}
+
+		@keyframes diagonalAnimation {
+			0% {
+				background-position: 0 0;
+			}
+
+			100% {
+				background-position: 200vw 200vh;
+			}
+		}
+
+		#background {
+			position: absolute;
+			opacity: 0.65;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			transition: opacity 0.1s ease;
+
+			background-image: url("real_esrgan_loteria.jpg");
+			background-size: cover;
+			animation: diagonalAnimation 240s linear infinite;
+			filter: blur(0.25rem);
+
+			z-index: -1000;
+		}
+
+		/*#background.buenas {
+			opacity: 0;
+		}*/
+
+		#victory_background {
+			position: absolute;
+			opacity: 0;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			transition: opacity 0.60s ease;
+
+/*			background-image: url("money-tree.jpg");
+			background-size: cover;
+			background-position: 50% 50%;*/
+			z-index: -999;
+
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		#victory_background.buenas {
+			opacity: 1;
+		}
+
+		#victory_background > p {
+			font-family: 'Protest Riot', sans-serif;
+			font-size: 14.5vw;
+			color: #f0f0f0;
+			text-shadow: 0 0 2.5vh #ccb000;
+			letter-spacing: -0.35rem;
+			height: 100vh;
+			line-height: 100vh;
+			transform: rotate(-12deg);
+			user-select: none;
+
+			position: relative;
+		}
+
+		#victory_background > p::before {
+			content: "";
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			top: -7%;
+			left: 0%;
+			z-index: -1;
+
+			background-image: url("gold-paint.png");
+			background-size: contain;
+			background-repeat: no-repeat;
+			background-position: center;
+			transform: rotate(20deg);
+		}
+
+		#carta {
+			background: url("back.png");
+			background-position: center;
+			background-size: 100% 100%;
+
+			border: 2vh solid black;
+			border-radius: 2vh;
+			opacity: 1;
+			height: 59.42vh; /* includes 2*border width due to box-sizing CSS */
+			width: 41.06vh; /* includes 2*border width due to box-sizing CSS */
+
+			cursor: pointer;
+			transition: transform 0.025s ease, width 0.1s ease, opacity 0.60s ease;
+			-webkit-tap-highlight-color: transparent;
+
+			display: flex;
+			align-items: center;
+			justify-content: center;
+
+			z-index: 0;
+		}
+
+		#state_text {
+			font-family: 'Protest Riot', sans-serif;
+			font-size: 10vh;
+			color: #f0f0f0;
+			opacity: 1;
+			text-shadow: 0.6vh 0.6vh 0 #333, 0.6vh -0.6vh 0 #333, -0.6vh 0.6vh 0 #333, -0.6vh -0.6vh 0 #333, 0.8485vh 0 0 #333, -0.8485vh 0 0 #333, 0 0.8485vh 0 #333, 0 -0.8485vh 0 #333, 0.7839vh 0.3247vh 0 #333, -0.7839vh 0.3247vh 0 #333, 0.7839vh -0.3247vh 0 #333, -0.7839vh -0.3247vh 0 #333, 0.3247vh 0.7839vh 0 #333, -0.3247vh 0.7839vh 0 #333, 0.3247vh -0.7839vh 0 #333, -0.3247vh -0.7839vh 0 #333;
+			user-select: none;
+			transform: rotate(-12deg);
+			transition: opacity 0.1s ease, translate 0.1s ease;
+		}
+
+		#carta.clicked {
+			transform: scale(1.05);
+		}
+
+		#carta.buenas {
+			cursor: default;
+			opacity: 0;
+		}
+
+		#history {
+			height: 59.42vh;
+			width: 8.72vh;
+			opacity: 1;
+
+			position: absolute;
+			right: 2vw;
+
+			transition: opacity 0.60s ease;
+		}
+
+		#history.buenas {
+			opacity: 0;
+		}
+
+		#history > div {
+			box-sizing: content-box;
+
+			border: 2px solid black;
+			border-radius: 5px;
+			height: 13.04vh;
+			width: 8.72vh;
+
+			position: absolute;
+			display: none;
+		}
+
+		#buenas {
+			background-image: url("coins-29899.svg");
+			background-size: contain;
+			background-position: center;
+			cursor: pointer;
+			height: 10vh;
+			width: 10vh;
+			position: fixed;
+			transform: translate(-6.5vw, 55vh);
+/*			transform: translate(-6.5vw, 37vh);*/
+			transition: transform 0.2s ease;
+			z-index: 1;
+		}
+
+		#buenas.alto {
+			transform: translate(-6.5vw, 37vh);
+		}
+
+		.hidden {
+			display: none;
+		}
+	</style>
+</head>
+<body>
+
+<div id="carta">
+	<p id="state_text">¡Ámonos!</p>
+</div>
+
+<!-- Spacing for the history div -->
+<div style="width: 13vw"></div>
+
+<div id="history"></div>
+
+<div id="buenas"></div>
+
+<div id="background"></div>
+
+<div id="victory_background">
+	<p>✨¡BUENAS!✨</p>
+</div>
+
+<script>
+	const loteriaDeck = [
+		"El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", "La Sirena", "La Escalera", "La Botella",
+		"El Barril", "El Árbol", "El Melón", "El Valiente", "El Gorrito", "La Muerte", "La Pera", "La Bandera",
+		"El Bandolón", "El Violoncello", "La Garza", "El Pájaro", "La Mano", "La Bota", "La Luna", "El Cotorro",
+		"El Borracho", "El Negrito", "El Corazón", "La Sandía", "El Tambor", "El Camarón", "Las Jaras", "El Músico",
+		"La Araña", "El Soldado", "La Estrella", "El Cazo", "El Mundo", "El Apache", "El Nopal", "El Alacrán",
+		"La Rosa", "La Calavera", "La Campana", "El Cantarito", "El Venado", "El Sol", "La Corona", "La Chalupa",
+		"El Pino", "El Pescado", "La Palma", "La Maceta", "El Arpa", "La Rana"
+	];
+
+	const u = Math.random;
+
+	// Determine if touch is available, and if so, use that instead of click events
+	const activator = window.ontouchstart ? "touchstart" : "click";
+
+	// Audio cue to ensure that user knows that the main action button was successfully clicked
+	const clickAudio = new Audio('multi-pop-2-188167.mp3');
+
+	// Audio cue for declaring buenas!
+	const buenasAudio = new Audio('success-1-6297.mp3');
+
+	// The amount of time to show each card
+	const dispTime = 6000;
+
+	// The number of previous cards to show on the side
+	const historySize = 6;
+
+	// The amount of time to linger on the ¡BUENAS! screen
+	const buenasTime = 5000;
+
+	// Index of the current card to show on the big carta container
+	let gameIndex = 0;
+
+	const NAME = 0;
+	const X_Y = 1;
+
+	// DOM element that displays the current loteria card, and is multi-use depending on the game state.
+	const carta = document.getElementById("carta");
+
+	// DOM element that displays text to the user about the current game state
+	const stateText = document.getElementById("state_text");
+
+	// DOM element that holds the previously shown cards
+	const cartaHistory = document.getElementById("history");
+
+	// DOM element that declares the end of the game
+	const buenas = document.getElementById("buenas");
+
+	// Generate the initial deck that can be used by the game
+	const loteria = loteriaDeck.map((card, i) => [card, iTo2D(i, 6, 9)]);
+
+	// Holds the current game
+	let game = false;
+
+	// Populate the history container with the appropriate number of card slots
+	const cartaHistoryDOMArr = Array.from({length: historySize}, () => {
+		const card = document.createElement("div");
+		cartaHistory.appendChild(card);
+		return card;
+	});
+
+	// Position each history card correctly in the viewport and apply a fade from the top to the bottom
+	const positionHistory = () => {
+		if (historySize > 0) {
+			const l = cartaHistoryDOMArr.length;
+
+			const wH = cartaHistory.getBoundingClientRect().height;
+			const cH = cartaHistoryDOMArr[0].getBoundingClientRect().height;
+
+			cartaHistoryDOMArr.forEach((e, i) => {
+				e.style.zIndex = historySize - i + 1;
+				e.style.top = `${(i * (wH - cH) / (l - 1))}px`;
+				e.style.opacity = (l - i) / l;
+			});
+		}
+	};
+
+	function iTo2D(i, m, n) {
+		if (i < 0 || i >= m * n)
+			throw new Error(`Index (${i}) is out of bounds for the ${m}x${n} matrix`);
+
+		const x = i % n;
+		const y = Math.floor(i / n);
+
+		return {x, y};
+	}
+
+	function Queue(n, onPush = arr => {}) {
+		const storage = [];
+
+		this.push = function (element) {
+			storage.unshift(element);
+
+			// The Queue only stores up to n elements
+			if (storage.length > n) {
+				storage.pop();
+			}
+
+			// Feed the current state of the queue to the provided function
+			onPush(this.toArray());
+
+			return this;
+		};
+
+		this.empty = function () {
+			while (storage.length > 0) {
+				storage.pop();
+			}
+
+			return this;
+		};
+
+		this.toArray = function () {
+			return storage.map(e => e);
+		}
+	}
+
+	function engine(fn, time, ...args) {
+		let engineID = -1;
+
+		return {
+			// Simple start
+			run: () => engineID = setInterval(fn, time, ...args),
+
+			// Return to a state of 0 and not -1 to differentiate between never executed and paused
+			stop: () => {
+				clearInterval(engineID);
+				engineID = 0;
+			},
+
+			// Is only ever positive when it has been set by the setInterval function
+			isRunning: () => engineID > 0,
+
+			// Will only ever be true if the engine has executed the "run" state at least once
+			isPaused: () => engineID > -1
+		};
+	}
+
+	function shuffleDeck(gameDeck) {
+		gameIndex = 0;
+		for (let i = gameDeck.length - 1; i > 0; i--) {
+			const j = Math.floor(u() * (i + 1));
+
+			[gameDeck[i], gameDeck[j]] = [gameDeck[j], gameDeck[i]];
+		}
+	}
+
+	function showNextCard(gameDeck, cardDOMElement, synthesizer, historyQueue) {
+		console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
+
+		const pos = gameDeck[gameIndex][X_Y];
+
+		// Initialize the card flip
+		cardDOMElement.style.width = 0;
+
+		// Delay a bit to let the card turning animation complete
+		setTimeout(() => {
+			// Change the card that's being displayed
+			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
+
+			// Save the previous card to the history queue if there is history available
+			if (gameIndex > 0) {
+				historyQueue.push(gameDeck[gameIndex - 1]);
+			}
+
+			// Finalize the card flip
+			setTimeout(() => {
+				cardDOMElement.style.width = "41.06vh";
+
+				// Announce the new card to the players
+				synthesizer.play(gameDeck[gameIndex][NAME]);
+
+				if (gameIndex + 1 < gameDeck.length) {
+					gameIndex++;
+				}
+
+				// TODO: Eliminate this and replace it with an option to continue looping or end the game
+				else {
+					gameIndex = 0;
+					shuffleDeck(gameDeck);
+				}
+			}, 50);
+		}, 100);
+	}
+
+	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
+		shuffleDeck(gameDeck);
+
+		const synth = 'speechSynthesis' in window ? (() => {
+			const s = new SpeechSynthesisUtterance();
+			s.lang = 'es-US';
+
+			return {
+				play: msg => {s.text = msg; window.speechSynthesis.speak(s);}
+			};
+		})() : {
+			play: msg => console.log(`Speech synthesizer not supported!`)
+		};
+
+		// Initialize the queue that will keep track of previously shown cards
+		const historyQueue = new Queue(cardHistoryDOMArray.length, queue => {
+			for (let i = 0; i < queue.length; i++) {
+				cardHistoryDOMArray[i].style.background = `url("loteria.jpg")`;
+				cardHistoryDOMArray[i].style.backgroundSize = "900%";
+				cardHistoryDOMArray[i].style.border = "2px solid black";
+
+				const pos = queue[i][X_Y];
+				cardHistoryDOMArray[i].style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`
+				cardHistoryDOMArray[i].style.display = "block";
+				positionHistory();
+			}
+		});
+
+		// Starting!
+		synth.play('¡Corre y se va, CON!');
+		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, synth, historyQueue);
+
+		// Give the starting message enough time to finish
+		setTimeout(() => {
+			cardDOMElement.style.background = `url("loteria.jpg")`;
+			cardDOMElement.style.backgroundSize = "900%";
+
+			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
+			gameLoop.run();
+		}, 3000);
+
+		return gameLoop;
+	}
+
+	positionHistory();
+
+	// Make the big carta the main controller for the game
+	carta.addEventListener(activator, () => {
+		// Clicking on the card after declaring buenas should no longer affect the current game
+		if (!carta.classList.contains("buenas")) {
+			// "engage" the click
+			carta.classList.toggle('clicked');
+
+			// Give the user the audio cue
+			clickAudio.play();
+
+			// The game has already started, so the carta is a play/pause button now
+			if (game) {
+				// Pause a running game
+				if (game.isRunning()) {
+					buenas.classList.toggle("alto");
+					stateText.innerText = '¡Alto!';
+					stateText.style.opacity = 1;
+					game.stop();
+
+				// Start a paused game
+				} else if (game.isPaused()) {
+					buenas.classList.toggle("alto");
+					stateText.style.opacity = 0;
+					game.run();
+				}
+
+			// The game has not started yet, so the carta is a play button that initializes the game
+			} else {
+				// This is the first time that the game is executed after initial load or reset
+				stateText.style.opacity = 0;
+				game = play(loteria, carta, cartaHistoryDOMArr, dispTime);
+			}
+
+			// "release" the click
+			setTimeout(() => carta.classList.toggle('clicked'), 100);
+		}
+	});
+
+	// Make the buenas button declare a winner
+	buenas.addEventListener(activator, () => {
+		// Stop the game if it is somehow still running
+		game.stop();
+
+		// This button should no longer be visible
+		buenas.classList.remove("alto");
+
+		// Hide the main UI and show the victory screen, and play the victory sound
+		const ui = [
+			document.getElementById("victory_background"),
+			carta,
+			cartaHistory
+		];
+		ui.forEach(e => e.classList.toggle("buenas"));
+		buenasAudio.play();
+
+		setTimeout(() => {
+			ui.forEach(e => e.classList.toggle("hidden"));
+
+			// Restore the game to its original state once enough time has passed on the buenas screen
+			setTimeout(() => {
+				game = false;
+
+				carta.style.background = `url("back.png")`;
+				carta.style.backgroundPosition = "center";
+				carta.style.backgroundSize = "100% 100%";
+
+				cartaHistoryDOMArr.forEach(e => {
+					e.style.background = 'none';
+					e.style.border = 'none';
+				});
+
+				stateText.innerText = `¡Ámonos!`;
+
+				ui.forEach(e => e.classList.toggle("hidden"));
+				ui.forEach(e => e.classList.toggle("buenas"));
+			}, buenasTime);
+		}, 600);
+	});
+
+	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
+	window.addEventListener("keydown", e => {
+		// Spacebar
+		if (e.key === ' ') {
+			// Prevent the default spacebar behavior of scrolling the page
+			e.preventDefault();
+
+			// Fire off the carta activator event
+			carta.dispatchEvent(new Event(activator));
+		}
+	});
+
+	// Make sure that the card history continues to be correctly positioned even on window resize
+	window.addEventListener("resize", positionHistory);
+</script>
+
+</body>
+</html>
