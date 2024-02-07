@@ -132,11 +132,11 @@
 			background-position: center;
 			background-size: 100% 100%;
 
-			border: 2vh solid black;
+			border: 1.5vh solid black;
 			border-radius: 2vh;
 			opacity: 1;
-			height: 59.42vh; /* includes 2*border width due to box-sizing CSS */
-			width: 41.06vh; /* includes 2*border width due to box-sizing CSS */
+			height: 58.42vh; /* includes 2*border width due to box-sizing CSS */
+			width: 40.06vh; /* includes 2*border width due to box-sizing CSS */
 
 			cursor: pointer;
 			transition: transform 0.025s ease, width 0.1s ease, opacity 0.60s ease;
@@ -170,12 +170,12 @@
 		}
 
 		#history {
-			height: 59.42vh;
+			height: 70vh;
 			width: 8.72vh;
 			opacity: 1;
 
 			position: absolute;
-			right: 2vw;
+			right: 1.5vw;
 
 			transition: opacity 0.60s ease;
 		}
@@ -217,6 +217,15 @@
 		.hidden {
 			display: none;
 		}
+
+		#spacer {
+			width: 0;
+			transition: width 0.25s ease;
+		}
+
+		#spacer.playing {
+			width: 13vw;
+		}
 	</style>
 </head>
 <body>
@@ -226,7 +235,7 @@
 </div>
 
 <!-- Spacing for the history div -->
-<div style="width: 13vw"></div>
+<div id="spacer"></div>
 
 <div id="history"></div>
 
@@ -392,6 +401,7 @@
 		const pos = gameDeck[gameIndex][X_Y];
 
 		// Initialize the card flip
+		document.getElementById("spacer").classList.toggle("playing");
 		cardDOMElement.style.width = 0;
 
 		// Delay a bit to let the card turning animation complete
@@ -408,7 +418,8 @@
 
 			// Finalize the card flip
 			setTimeout(() => {
-				cardDOMElement.style.width = "41.06vh";
+				document.getElementById("spacer").classList.toggle("playing");
+				cardDOMElement.style.width = "40.06vh";
 
 				// Announce the new card to the players
 				synthesizer.play(gameDeck[gameIndex][NAME]);
@@ -460,6 +471,7 @@
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
+			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
 			gameLoop.run();
 		}, 3000);
@@ -530,6 +542,8 @@
 			// Restore the game to its original state once enough time has passed on the buenas screen
 			setTimeout(() => {
 				game = false;
+
+				document.getElementById("spacer").classList.toggle("playing");
 
 				carta.style.background = `url("back.png")`;
 				carta.style.backgroundPosition = "center";
