@@ -65,7 +65,7 @@
 			background-image: url("real_esrgan_loteria.jpg");
 			background-size: cover;
 			animation: diagonalAnimation 240s linear infinite;
-			filter: blur(0.25rem);
+/*			filter: blur(0.25rem);*/
 
 			z-index: -1000;
 		}
@@ -397,6 +397,8 @@
 		// Delay a bit to let the card turning animation complete
 		setTimeout(() => {
 			// Change the card that's being displayed
+			cardDOMElement.style.background = `url("loteria.jpg")`;
+			cardDOMElement.style.backgroundSize = "900%";
 			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
 
 			// Save the previous card to the history queue if there is history available
@@ -458,9 +460,6 @@
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
-			cardDOMElement.style.background = `url("loteria.jpg")`;
-			cardDOMElement.style.backgroundSize = "900%";
-
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
 			gameLoop.run();
 		}, 3000);
