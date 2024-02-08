@@ -276,7 +276,7 @@
 	const historySize = 6;
 
 	// The amount of time to linger on the ¡BUENAS! screen
-	const buenasTime = 5000;
+	const buenasTime = 3000;
 
 	// Index of the current card to show on the big carta container
 	let gameIndex = 0;
@@ -286,6 +286,11 @@
 
 	// DOM element that displays the current loteria card, and is multi-use depending on the game state.
 	const carta = document.getElementById("carta");
+	const cartaColor = () => {
+		const colors = ['white', 'black', 'orange', 'cyan', '#bf68ff'];
+		carta.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+	};
+	cartaColor();
 
 	// DOM element that displays text to the user about the current game state
 	const stateText = document.getElementById("state_text");
@@ -548,6 +553,7 @@
 				carta.style.background = `url("back.png")`;
 				carta.style.backgroundPosition = "center";
 				carta.style.backgroundSize = "100% 100%";
+				cartaColor();
 
 				cartaHistoryDOMArr.forEach(e => {
 					e.style.background = 'none';
