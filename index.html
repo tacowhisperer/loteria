@@ -269,6 +269,9 @@
 	// Audio cue for declaring buenas!
 	const buenasAudio = new Audio('success-1-6297.mp3');
 
+	// Audio cue for fliping the card
+	const flipAudio = new Audio('cardsound32562-37691.mp3');
+
 	// The amount of time to show each card
 	const dispTime = 4500;
 
@@ -406,6 +409,7 @@
 		const pos = gameDeck[gameIndex][X_Y];
 
 		// Initialize the card flip
+		flipAudio.play();
 		document.getElementById("spacer").classList.toggle("playing");
 		cardDOMElement.style.width = 0;
 
