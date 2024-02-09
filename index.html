@@ -481,6 +481,7 @@
 		});
 
 		// Starting!
+		flipPulse();
 		synth.play('¡Corre y se va, CON!');
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, synth, historyQueue);
 
@@ -536,6 +537,9 @@
 
 	// Make the buenas button declare a winner
 	buenas.addEventListener(activator, () => {
+		// Tactile cue because why not.
+		flipPulse();
+
 		// Stop the game if it is somehow still running
 		game.stop();
 
