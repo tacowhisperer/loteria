@@ -272,6 +272,9 @@
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
 
+	// Tactile cue for flipping the card
+	const flipPulse = () => window.navigator.vibrate([100]);
+
 	// The amount of time to show each card
 	const dispTime = 4500;
 
@@ -419,6 +422,9 @@
 			cardDOMElement.style.background = `url("loteria.jpg")`;
 			cardDOMElement.style.backgroundSize = "900%";
 			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
+
+			// Pulse to the user that a new card is coming
+			flipPulse();
 
 			// Save the previous card to the history queue if there is history available
 			if (gameIndex > 0) {
