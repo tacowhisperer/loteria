@@ -217,6 +217,18 @@
 			display: none;
 		}
 
+		#card_count {
+			background-color: black;
+			color: white;
+			border: none;
+
+			font-family: 'Protest Riot', sans-serif;;
+			text-align: center;
+			position: relative;
+			top: -3.7vh;
+			left: 0.2vh;
+		}
+
 		#buenas {
 			background-image: url("coins-29899.svg");
 			background-size: contain;
@@ -289,7 +301,9 @@
 	<!-- Spacing for the history div -->
 	<div id="spacer" class="removed"></div>
 
-	<div id="history" class="removed"></div>
+	<div id="history" class="removed">
+		<p id="card_count"></p>
+	</div>
 
 	<div id="buenas" class="removed"></div>
 
@@ -335,8 +349,6 @@ const images = [loteriaImg, barajaImg, backgroundImg, buenasImg];
 // window.addEventListener('resize', setScrollDistance);
 
 const loadLoop = setInterval(() => {
-	console.log(images);
-
 	const imagesLoaded = images.reduce((bool, img) => img.complete && bool, true);
 
 	if (imagesLoaded) {
@@ -406,6 +418,9 @@ function loadApp() {
 
 	// DOM element that holds the previously shown cards
 	const cartaHistory = document.getElementById("history");
+
+	// DOM element that holds the current card count
+	const cardCount = document.getElementById("card_count");
 
 	// DOM element that declares the end of the game
 	const buenas = document.getElementById("buenas");
@@ -511,6 +526,7 @@ function loadApp() {
 
 	function showNextCard(gameDeck, cardDOMElement, synthesizer, historyQueue) {
 		console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
+		cardCount.innerText = `${gameIndex + 1} / 54`;
 
 		const pos = gameDeck[gameIndex][X_Y];
 
@@ -671,6 +687,8 @@ function loadApp() {
 				carta.style.backgroundPosition = "center";
 				carta.style.backgroundSize = "100% 100%";
 				cartaColor();
+
+				cardCount.innerText = '';
 
 				cartaHistoryDOMArr.forEach(e => {
 					e.style.background = 'none';
