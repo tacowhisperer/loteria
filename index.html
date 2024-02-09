@@ -298,7 +298,7 @@
 	// DOM element that displays the current loteria card, and is multi-use depending on the game state.
 	const carta = document.getElementById("carta");
 	const cartaColor = () => {
-		const colors = ['white', 'black', 'orange', 'cyan', '#bf68ff'];
+		const colors = ['white'];
 		carta.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
 	};
 	cartaColor();
