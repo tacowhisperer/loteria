@@ -139,7 +139,7 @@
 			width: 40.06vh; /* includes 2*border width due to box-sizing CSS */
 
 			cursor: pointer;
-			transition: transform 0.025s ease, width 0.1s ease, opacity 0.60s ease;
+			transition: transform 0.025s ease, opacity 0.60s ease;
 			-webkit-tap-highlight-color: transparent;
 
 			display: flex;
@@ -147,6 +147,11 @@
 			justify-content: center;
 
 			z-index: 0;
+		}
+
+		#carta.flipped {
+			transform: scaleX(0);
+			transition: transform 0.1s ease;
 		}
 
 		#state_text {
@@ -414,7 +419,7 @@
 		// Initialize the card flip
 		flipAudio.play();
 		document.getElementById("spacer").classList.toggle("playing");
-		cardDOMElement.style.width = 0;
+		cardDOMElement.classList.toggle("flipped");
 
 		// Delay a bit to let the card turning animation complete
 		setTimeout(() => {
@@ -434,7 +439,7 @@
 			// Finalize the card flip
 			setTimeout(() => {
 				document.getElementById("spacer").classList.toggle("playing");
-				cardDOMElement.style.width = "40.06vh";
+				cardDOMElement.classList.toggle("flipped");
 
 				// Announce the new card to the players
 				synthesizer.play(gameDeck[gameIndex][NAME]);
