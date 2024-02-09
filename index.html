@@ -530,7 +530,6 @@ function loadApp() {
 
 	function showNextCard(gameDeck, cardDOMElement, synthesizer, historyQueue) {
 		console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
-		cardCount.innerText = `${gameIndex + 1} / 54`;
 
 		const pos = gameDeck[gameIndex][X_Y];
 
@@ -549,8 +548,9 @@ function loadApp() {
 			// Pulse to the user that a new card is coming
 			flipPulse();
 
-			// Save the previous card to the history queue if there is history available
+			// Only add data to the history queue once there's at least 1 old card
 			if (gameIndex > 0) {
+				cardCount.innerText = `${gameIndex + 1} / 54`;
 				historyQueue.push(gameDeck[gameIndex - 1]);
 			}
 
@@ -569,6 +569,7 @@ function loadApp() {
 				// TODO: Eliminate this and replace it with an option to continue looping or end the game
 				else {
 					gameIndex = 0;
+					cardCount.innerText = '';
 					shuffleDeck(gameDeck);
 				}
 			}, 50);
