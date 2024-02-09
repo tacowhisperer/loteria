@@ -29,7 +29,7 @@
 		}
 
 		body {
-			background-color: black;
+			/*background-color: black;
 
 			height: 100vh;
 			width: 100vw;
@@ -40,6 +40,14 @@
 			justify-content: center;
 			align-items: center;
 
+			overflow: hidden;*/
+
+			background-color: black;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
 			overflow: hidden;
 		}
 
@@ -231,28 +239,92 @@
 		#spacer.playing {
 			width: 13vw;
 		}
+
+		#container {
+			height: 100vh;
+			width: 100vw;
+
+			display: flex;
+			flex-direction: row;
+			flex-wrap: nowrap;
+			justify-content: center;
+			align-items: center;
+
+			overflow: hidden;
+		}
+
+		#loading {
+			border: 1vh solid white;
+			border-top: 1vh solid #333;
+			border-radius: 50%;
+			height: 10vh;
+			width: 10vh;
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			0% { transform: rotate(0deg); }
+			100% { transform: rotate(360deg); }
+		}
+
+		.removed {
+			display: none !important;
+		}
 	</style>
 </head>
 <body>
 
-<div id="carta">
-	<p id="state_text">¡Ámonos!</p>
-</div>
+<div id="container">
+	<div id="carta" class="removed">
+		<p id="state_text">¡Ámonos!</p>
+	</div>
 
-<!-- Spacing for the history div -->
-<div id="spacer"></div>
+	<!-- Spacing for the history div -->
+	<div id="spacer" class="removed"></div>
 
-<div id="history"></div>
+	<div id="history" class="removed"></div>
 
-<div id="buenas"></div>
+	<div id="buenas" class="removed"></div>
 
-<div id="background"></div>
+	<div id="background" class="removed"></div>
 
-<div id="victory_background">
-	<p>✨¡BUENAS!✨</p>
+	<div id="victory_background" class="removed">
+		<p>✨¡BUENAS!✨</p>
+	</div>
+
+	<div id="loading"></div>
 </div>
 
 <script>
+const container = document.getElementById("container");
+
+const loteriaImg = new Image();
+loteriaImg.src = 'loteria.jpg';
+
+const barajaImg = new Image();
+barajaImg.src = 'back.png';
+
+const backgroundImg = new Image();
+backgroundImg.src = 'real_esrgan_loteria.jpg';
+
+const images = [loteriaImg, barajaImg, backgroundImg];
+
+const loadLoop = setInterval(() => {
+	console.log(images);
+
+	const imagesLoaded = images.reduce((bool, img) => img.complete && bool, true);
+
+	if (imagesLoaded) {
+		clearInterval(loadLoop);
+
+		// Unhide any manually removed elements that may have used required images above as backgrounds and hide the loading spinner
+		[...container.children].map(e => e.classList.toggle("removed"));
+
+		loadApp();
+	}
+}, 25);
+
+function loadApp() {
 	const loteriaDeck = [
 		"El Gallo", "El Diablito", "La Dama", "El Catrín", "El Paraguas", "La Sirena", "La Escalera", "La Botella",
 		"El Barril", "El Árbol", "El Melón", "El Valiente", "El Gorrito", "La Muerte", "La Pera", "La Bandera",
@@ -424,7 +496,7 @@
 		// Delay a bit to let the card turning animation complete
 		setTimeout(() => {
 			// Change the card that's being displayed
-			cardDOMElement.style.background = `url("loteria.jpg")`;
+			cardDOMElement.style.background = `url("${loteriaImg.src}")`;
 			cardDOMElement.style.backgroundSize = "900%";
 			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
 
@@ -474,7 +546,7 @@
 		// Initialize the queue that will keep track of previously shown cards
 		const historyQueue = new Queue(cardHistoryDOMArray.length, queue => {
 			for (let i = 0; i < queue.length; i++) {
-				cardHistoryDOMArray[i].style.background = `url("loteria.jpg")`;
+				cardHistoryDOMArray[i].style.background = `url("${loteriaImg.src}")`;
 				cardHistoryDOMArray[i].style.backgroundSize = "900%";
 				cardHistoryDOMArray[i].style.border = "2px solid black";
 
@@ -569,7 +641,7 @@
 
 				document.getElementById("spacer").classList.toggle("playing");
 
-				carta.style.background = `url("back.png")`;
+				carta.style.background = `url("${barajaImg.src}")`;
 				carta.style.backgroundPosition = "center";
 				carta.style.backgroundSize = "100% 100%";
 				cartaColor();
@@ -601,6 +673,8 @@
 
 	// Make sure that the card history continues to be correctly positioned even on window resize
 	window.addEventListener("resize", positionHistory);
+
+}
 </script>
 
 </body>
