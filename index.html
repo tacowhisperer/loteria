@@ -19,6 +19,15 @@
 	<style>
 		@import url('https://fonts.googleapis.com/css2?family=Protest+Riot&display=swap');
 
+		:root {
+			--background-image-width: 1071px;
+			--background-image-height: 1038px;
+
+			/* I'm leaving these in here to remind myself to think before reinventing the wheel */
+			--background-scroll-x: 200vw;
+			--background-scroll-y: 200vh;
+		}
+
 		* {
 			box-sizing: border-box;
 		}
@@ -57,7 +66,7 @@
 			}
 
 			100% {
-				background-position: 200vw 200vh;
+				background-position: var(--background-image-width) var(--background-image-height);
 			}
 		}
 
@@ -71,16 +80,15 @@
 			transition: opacity 0.1s ease;
 
 			background-image: url("real_esrgan_loteria.jpg");
-			background-size: cover;
-			animation: diagonalAnimation 240s linear infinite;
-/*			filter: blur(0.25rem);*/
+			background-size: var(--background-image-width);
+			animation: diagonalAnimation 60s linear infinite;
 
 			z-index: -1000;
 		}
 
-		/*#background.buenas {
+		#background.buenas {
 			opacity: 0;
-		}*/
+		}
 
 		#victory_background {
 			position: absolute;
@@ -91,9 +99,9 @@
 			height: 100vh;
 			transition: opacity 0.60s ease;
 
-/*			background-image: url("money-tree.jpg");
+			background-image: url("money-tree.jpg");
 			background-size: cover;
-			background-position: 50% 50%;*/
+			background-position: 50% 50%;
 			z-index: -999;
 
 			display: flex;
@@ -218,7 +226,6 @@
 			width: 10vh;
 			position: fixed;
 			transform: translate(-6.5vw, 55vh);
-/*			transform: translate(-6.5vw, 37vh);*/
 			transition: transform 0.2s ease;
 			z-index: 1;
 		}
@@ -309,6 +316,21 @@ backgroundImg.src = 'real_esrgan_loteria.jpg';
 
 const images = [loteriaImg, barajaImg, backgroundImg];
 
+// TODO: Never do this again
+// // Sets the distance that the background image must travel in pixels to create a perfect loop
+// const setScrollDistance = () => {
+// 	const imageWidth = +getComputedStyle(document.documentElement).getPropertyValue('--background-image-width').match(/\d+/);
+// 	const imageRatio = imageWidth / 5355;
+// 	const imageHeight = imageRatio * 5190;
+
+// 	document.documentElement.style.setProperty('--background-scroll-x', `${(window.innerWidth / imageWidth) }px`);
+
+// 	alert(imageRatio)
+// };
+
+// setScrollDistance();
+// window.addEventListener('resize', setScrollDistance);
+
 const loadLoop = setInterval(() => {
 	console.log(images);
 
@@ -348,6 +370,7 @@ function loadApp() {
 
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
+	flipAudio.volume = 0.8;
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([100]);
@@ -673,8 +696,8 @@ function loadApp() {
 
 	// Make sure that the card history continues to be correctly positioned even on window resize
 	window.addEventListener("resize", positionHistory);
-
 }
+
 </script>
 
 </body>
