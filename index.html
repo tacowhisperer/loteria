@@ -552,7 +552,7 @@ function loadApp() {
 			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
 
 			cardCount.classList.add("counting");
-			cardCount.innerText = `${gameIndex + 1} / 54`;
+			cardCount.innerText = `${gameIndex + 1} / ${loteriaDeck.length}`;
 
 			// Pulse to the user that a new card is coming
 			flipPulse();
