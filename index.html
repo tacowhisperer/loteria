@@ -186,7 +186,7 @@
 		}
 
 		#carta.clicked {
-			transform: scale(1.05);
+			scale: 1.05;
 		}
 
 		#carta.buenas {
@@ -246,7 +246,7 @@
 			height: 10vh;
 			width: 10vh;
 			position: fixed;
-			transition: transform 0.2s ease, opacity 0.2s ease;
+			transition: transform 0.05s ease, opacity 0.2s ease;
 			z-index: 1;
 		}
 
@@ -255,14 +255,24 @@
 			transform: translate(-6.5vw, 55vh);
 		}
 
+		#buenas.clicked {
+			transform: translate(-6.5vw, 37.5vh) scale(1.1);
+		}
+
 		#buenas.alto {
 			transform: translate(-6.5vw, 37vh);
 		}
 
 		#siguiente {
+			border-radius: 50%;
+
 			background-image: url("next-svgrepo-com.svg");
 			transform: translate(-6.5vw, 37vh);
 			opacity: 1;
+		}
+
+		#siguiente.clicked {
+			transform: translate(-6.5vw, 37.5vh) scale(1.1);
 		}
 
 		#siguiente.inactive {
@@ -713,6 +723,12 @@ function loadApp() {
 
 	// Make the buenas button declare a winner
 	buenas.addEventListener(activator, () => {
+		// "engage" the click
+		buenas.classList.toggle('clicked');
+
+		// "release" the click
+		setTimeout(() => buenas.classList.toggle('clicked'), 100);
+
 		// Stop the game if it is somehow still running
 		game.stop();
 
