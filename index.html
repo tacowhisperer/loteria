@@ -239,21 +239,39 @@
 			padding: 0.2vh 1vh;
 		}
 
-		#buenas {
-			background-image: url("coins-29899.svg");
+		.nav_button {
 			background-size: contain;
 			background-position: center;
 			cursor: pointer;
 			height: 10vh;
 			width: 10vh;
 			position: fixed;
-			transform: translate(-6.5vw, 55vh);
-			transition: transform 0.2s ease;
+			transition: transform 0.2s ease, opacity 0.2s ease;
 			z-index: 1;
+		}
+
+		#buenas {
+			background-image: url("coins-29899.svg");
+			transform: translate(-6.5vw, 55vh);
 		}
 
 		#buenas.alto {
 			transform: translate(-6.5vw, 37vh);
+		}
+
+		#siguiente {
+			background-image: url("next-svgrepo-com.svg");
+			transform: translate(-6.5vw, 37vh);
+			opacity: 1;
+		}
+
+		#siguiente.inactive {
+			display: none;
+			opacity: 0;
+		}
+
+		#siguiente.alto {
+			transform: translate(-6.5vw, 55vh);
 		}
 
 		.hidden {
@@ -315,7 +333,9 @@
 	<div id="history" class="removed">
 	</div>
 
-	<div id="buenas" class="removed"></div>
+	<div id="siguiente" class="removed nav_button inactive"></div>
+
+	<div id="buenas" class="removed nav_button"></div>
 
 	<div id="background" class="removed"></div>
 
@@ -435,6 +455,9 @@ function loadApp() {
 	// DOM element that declares the end of the game
 	const buenas = document.getElementById("buenas");
 
+	// DOM element that shows the next card when the option is available
+	const next = document.getElementById("siguiente");
+
 	// Generate the initial deck that can be used by the game
 	const loteria = loteriaDeck.map((card, i) => [card, iTo2D(i, 6, 9)]);
 
@@ -521,7 +544,10 @@ function loadApp() {
 			isRunning: () => engineID > 0,
 
 			// Will only ever be true if the engine has executed the "run" state at least once
-			isPaused: () => engineID > -1
+			isPaused: () => engineID > -1,
+
+			// Manual call to the next loop
+			step: () => fn(...args)
 		};
 	}
 
@@ -543,6 +569,9 @@ function loadApp() {
 		flipAudio.play();
 		document.getElementById("spacer").classList.toggle("playing");
 		cardDOMElement.classList.toggle("flipped");
+
+		// Show the next button that should now be available
+		next.classList.remove("inactive");
 
 		// Delay a bit to let the card turning animation complete
 		setTimeout(() => {
@@ -568,6 +597,7 @@ function loadApp() {
 				cardDOMElement.classList.toggle("flipped");
 
 				// Announce the new card to the players
+				synthesizer.stop();
 				synthesizer.play(gameDeck[gameIndex][NAME]);
 
 				if (gameIndex + 1 < gameDeck.length) {
@@ -591,6 +621,7 @@ function loadApp() {
 			s.lang = 'es-US';
 
 			return {
+				stop: () => window.speechSynthesis.cancel(),
 				play: msg => {s.text = msg; window.speechSynthesis.speak(s);}
 			};
 		})() : {
@@ -641,6 +672,7 @@ function loadApp() {
 			if (game) {
 				// Pause a running game
 				if (game.isRunning()) {
+					next.classList.toggle("alto");
 					buenas.classList.toggle("alto");
 					stateText.innerText = '¡Alto!';
 					stateText.style.opacity = 1;
@@ -648,6 +680,7 @@ function loadApp() {
 
 				// Start a paused game
 				} else if (game.isPaused()) {
+					next.classList.toggle("alto");
 					buenas.classList.toggle("alto");
 					stateText.style.opacity = 0;
 					game.run();
@@ -663,6 +696,19 @@ function loadApp() {
 			// "release" the click
 			setTimeout(() => carta.classList.toggle('clicked'), 100);
 		}
+	});
+
+	// Make the next button go to the next card
+	next.addEventListener(activator, () => {
+		// "engage" the click
+		next.classList.toggle('clicked');
+
+		game.stop();
+		game.step();
+		game.run();
+
+		// "release" the click
+		setTimeout(() => next.classList.toggle('clicked'), 100);
 	});
 
 	// Make the buenas button declare a winner
@@ -705,6 +751,9 @@ function loadApp() {
 				});
 
 				stateText.innerText = `¡Ámonos!`;
+
+				next.classList.remove("alto");
+				next.classList.add("inactive");
 
 				ui.forEach(e => e.classList.toggle("hidden"));
 				ui.forEach(e => e.classList.toggle("buenas"));
