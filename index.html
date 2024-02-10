@@ -222,15 +222,21 @@
 		}
 
 		#card_count {
-			background-color: black;
+			background-color: rgba(0, 0, 0, 0.5);
 			color: white;
 			border: none;
+			border-radius: 1vh;
 
-			font-family: 'Protest Riot', sans-serif;;
+			font-family: 'Protest Riot', sans-serif;
+			font-size: 2vh;
 			text-align: center;
-			position: relative;
-			top: -3.7vh;
-			left: 0.2vh;
+			position: absolute;
+
+			transform: translate(14vh, -26vh);
+		}
+
+		#card_count.counting {
+			padding: 0.2vh 1vh;
 		}
 
 		#buenas {
@@ -300,13 +306,13 @@
 <div id="container">
 	<div id="carta" class="removed">
 		<p id="state_text">¡Ámonos!</p>
+		<p id="card_count"></p>
 	</div>
 
 	<!-- Spacing for the history div -->
 	<div id="spacer" class="removed"></div>
 
 	<div id="history" class="removed">
-		<p id="card_count"></p>
 	</div>
 
 	<div id="buenas" class="removed"></div>
@@ -389,7 +395,7 @@ function loadApp() {
 
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
-	flipAudio.volume = 0.8;
+	flipAudio.volume = 0.4;
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([100]);
@@ -545,12 +551,14 @@ function loadApp() {
 			cardDOMElement.style.backgroundSize = "900%";
 			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
 
+			cardCount.classList.add("counting");
+			cardCount.innerText = `${gameIndex + 1} / 54`;
+
 			// Pulse to the user that a new card is coming
 			flipPulse();
 
 			// Only add data to the history queue once there's at least 1 old card
 			if (gameIndex > 0) {
-				cardCount.innerText = `${gameIndex + 1} / 54`;
 				historyQueue.push(gameDeck[gameIndex - 1]);
 			}
 
@@ -569,7 +577,6 @@ function loadApp() {
 				// TODO: Eliminate this and replace it with an option to continue looping or end the game
 				else {
 					gameIndex = 0;
-					cardCount.innerText = '';
 					shuffleDeck(gameDeck);
 				}
 			}, 50);
@@ -689,6 +696,7 @@ function loadApp() {
 				carta.style.backgroundSize = "100% 100%";
 				cartaColor();
 
+				cardCount.classList.remove("counting");
 				cardCount.innerText = '';
 
 				cartaHistoryDOMArr.forEach(e => {
