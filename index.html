@@ -437,7 +437,7 @@ function loadApp() {
 	const historySize = 6;
 
 	// The amount of time to linger on the ¡BUENAS! screen
-	const buenasTime = 2500;
+	const buenasTime = 3000;
 
 	// Index of the current card to show on the big carta container
 	let gameIndex = 0;
@@ -653,7 +653,7 @@ function loadApp() {
 		});
 
 		// Starting!
-		synth.play('¡Corre y se va, CON!');
+		synth.play('¡Corre y se va corriendo, CON!');
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, synth, historyQueue);
 
 		// Give the starting message enough time to finish
@@ -661,7 +661,7 @@ function loadApp() {
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
 			gameLoop.run();
-		}, 3000);
+		}, 4000);
 
 		return gameLoop;
 	}
