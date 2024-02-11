@@ -243,10 +243,11 @@
 			background-size: contain;
 			background-position: center;
 			cursor: pointer;
+			overflow: hidden;
 			height: 10vh;
 			width: 10vh;
 			position: fixed;
-			transition: transform 0.05s ease, opacity 0.2s ease;
+			transition: transform 0.1s ease, opacity 0.2s ease;
 			z-index: 1;
 		}
 
@@ -265,7 +266,6 @@
 
 		#siguiente {
 			border-radius: 50%;
-
 			background-image: url("next-svgrepo-com.svg");
 			transform: translate(-6.5vw, 37vh);
 			opacity: 1;
@@ -282,6 +282,19 @@
 
 		#siguiente.alto {
 			transform: translate(-6.5vw, 55vh);
+		}
+
+		#siguiente_timer {
+			position: absolute;
+			height: 100%;
+			width: 100%;
+			background: conic-gradient(
+					from 0deg,
+					black 0%, 
+					black 0%, 
+					transparent 0%,
+					transparent 100%
+				);
 		}
 
 		.hidden {
@@ -343,7 +356,9 @@
 	<div id="history" class="removed">
 	</div>
 
-	<div id="siguiente" class="removed nav_button inactive"></div>
+	<div id="siguiente" class="removed nav_button inactive">
+		<div id="siguiente_timer"></div>
+	</div>
 
 	<div id="buenas" class="removed nav_button"></div>
 
@@ -372,21 +387,6 @@ const buenasImg = new Image();
 buenasImg.src = 'money-tree.jpg';
 
 const images = [loteriaImg, barajaImg, backgroundImg, buenasImg];
-
-// TODO: Never do this again
-// // Sets the distance that the background image must travel in pixels to create a perfect loop
-// const setScrollDistance = () => {
-// 	const imageWidth = +getComputedStyle(document.documentElement).getPropertyValue('--background-image-width').match(/\d+/);
-// 	const imageRatio = imageWidth / 5355;
-// 	const imageHeight = imageRatio * 5190;
-
-// 	document.documentElement.style.setProperty('--background-scroll-x', `${(window.innerWidth / imageWidth) }px`);
-
-// 	alert(imageRatio)
-// };
-
-// setScrollDistance();
-// window.addEventListener('resize', setScrollDistance);
 
 const loadLoop = setInterval(() => {
 	const imagesLoaded = images.reduce((bool, img) => img.complete && bool, true);
@@ -425,16 +425,16 @@ function loadApp() {
 
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
-	flipAudio.volume = 0.4;
+	flipAudio.volume = 0.35;
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([100]);
 
 	// The amount of time to show each card
-	const dispTime = 4500;
+	const dispTime = 4000;
 
 	// The number of previous cards to show on the side
-	const historySize = 6;
+	const historySize = 5;
 
 	// The amount of time to linger on the ¡BUENAS! screen
 	const buenasTime = 3000;
@@ -467,6 +467,19 @@ function loadApp() {
 
 	// DOM element that shows the next card when the option is available
 	const next = document.getElementById("siguiente");
+
+	// DOM element that shows the time remaining on the current baraja
+	const nextTimer = document.getElementById("siguiente_timer");
+
+	// Engine that controls the timer animation
+	let lastTickTime = Date.now();
+	const timerColor = 'rgba(220, 180, 10, 0.25)';
+	const timer = engine(() => {
+		const deg = ((Date.now() - lastTickTime) % dispTime) / dispTime * 360; // 360 degrees in a circle
+		const gradient = `conic-gradient(from 0deg, ${timerColor} 0deg, ${timerColor} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
+
+		nextTimer.style.background = gradient;
+	}, 0).useAnimationFrames();
 
 	// Generate the initial deck that can be used by the game
 	const loteria = loteriaDeck.map((card, i) => [card, iTo2D(i, 6, 9)]);
@@ -540,24 +553,75 @@ function loadApp() {
 	function engine(fn, time, ...args) {
 		let engineID = -1;
 
+		let usingAnimationFrames = false;
+		let startTime = -1;
+
 		return {
 			// Simple start
-			run: () => engineID = setInterval(fn, time, ...args),
+			run: () => {
+				if (!usingAnimationFrames) {
+					engineID = setInterval(fn, time, ...args)
+				}
+
+				else {
+					startTime = Date.now();
+
+					let engineLoop;
+					engineLoop = () => {
+						if (startTime > 0) {
+							// The minimum amount of time has elapsed to call the function again
+							if ((Date.now() - startTime) >= time) {
+								fn(...args);
+								startTime = Date.now();
+							}
+							
+							engineID = requestAnimationFrame(engineLoop);
+						}
+					}
+
+					engineLoop();
+				}
+			},
 
 			// Return to a state of 0 and not -1 to differentiate between never executed and paused
 			stop: () => {
-				clearInterval(engineID);
-				engineID = 0;
+				if (!usingAnimationFrames) {
+					clearInterval(engineID);
+					engineID = 0;
+				}
+
+				else {
+					cancelAnimationFrame(engineID);
+					startTime = 0;
+				}
 			},
 
-			// Is only ever positive when it has been set by the setInterval function
-			isRunning: () => engineID > 0,
+			// Is only ever positive when it has been set by the setInterval or requestAnimationFrame functions
+			isRunning: () => {
+				if (!usingAnimationFrames) {
+					return engineID > 0;
+				}
+
+				return startTime > 0;
+			},
 
 			// Will only ever be true if the engine has executed the "run" state at least once
-			isPaused: () => engineID > -1,
+			isPaused: () => {
+				if (!usingAnimationFrames) {
+					return engineID > -1;
+				}
+
+				return startTime > -1
+			},
 
 			// Manual call to the next loop
-			step: () => fn(...args)
+			step: () => fn(...args),
+
+			// Use animationframe instead of setinterval to power the engine
+			useAnimationFrames: function() {
+				useAnimationFrames = true;
+				return this;
+			}
 		};
 	}
 
@@ -660,6 +724,8 @@ function loadApp() {
 		setTimeout(() => {
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
+			lastTickTime = Date.now();
+			timer.run();
 			gameLoop.run();
 		}, 4000);
 
@@ -686,6 +752,8 @@ function loadApp() {
 					buenas.classList.toggle("alto");
 					stateText.innerText = '¡Alto!';
 					stateText.style.opacity = 1;
+
+					timer.stop();
 					game.stop();
 
 				// Start a paused game
@@ -693,6 +761,9 @@ function loadApp() {
 					next.classList.toggle("alto");
 					buenas.classList.toggle("alto");
 					stateText.style.opacity = 0;
+
+					lastTickTime = Date.now();
+					timer.run();
 					game.run();
 				}
 
@@ -713,6 +784,7 @@ function loadApp() {
 		// "engage" the click
 		next.classList.toggle('clicked');
 
+		lastTickTime = Date.now();
 		game.stop();
 		game.step();
 		game.run();
