@@ -472,6 +472,7 @@ function loadApp() {
 	const nextTimer = document.getElementById("siguiente_timer");
 
 	// Engine that controls the timer animation
+	const fps = 30;
 	let lastTickTime = Date.now();
 	const timerColor = 'rgba(220, 180, 10, 0.25)';
 	const timer = engine(() => {
@@ -479,7 +480,7 @@ function loadApp() {
 		const gradient = `conic-gradient(from 0deg, ${timerColor} 0deg, ${timerColor} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 
 		nextTimer.style.background = gradient;
-	}, 0).useAnimationFrames();
+	}, 1000 / fps).useAnimationFrames();
 
 	// Generate the initial deck that can be used by the game
 	const loteria = loteriaDeck.map((card, i) => [card, iTo2D(i, 6, 9)]);
