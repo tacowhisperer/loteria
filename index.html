@@ -288,13 +288,8 @@
 			position: absolute;
 			height: 100%;
 			width: 100%;
-			background: conic-gradient(
-					from 0deg,
-					black 0%, 
-					black 0%, 
-					transparent 0%,
-					transparent 100%
-				);
+
+			mask-image: radial-gradient(circle at center, transparent 48%, black 50%);
 		}
 
 		.hidden {
@@ -472,9 +467,9 @@ function loadApp() {
 	const nextTimer = document.getElementById("siguiente_timer");
 
 	// Engine that controls the timer animation
-	const fps = 30;
+	const fps = 18;
 	let lastTickTime = Date.now();
-	const timerColor = 'rgba(220, 180, 10, 0.25)';
+	const timerColor = 'rgba(220, 180, 10, 0.95)';
 	const timer = engine(() => {
 		const deg = ((Date.now() - lastTickTime) % dispTime) / dispTime * 360; // 360 degrees in a circle
 		const gradient = `conic-gradient(from 0deg, ${timerColor} 0deg, ${timerColor} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
