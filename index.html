@@ -381,7 +381,13 @@ backgroundImg.src = 'real_esrgan_loteria.jpg';
 const buenasImg = new Image();
 buenasImg.src = 'money-tree.jpg';
 
-const images = [loteriaImg, barajaImg, backgroundImg, buenasImg];
+const resetImg = new Image();
+resetImg.src = 'refresh-circle-svgrepo-com.svg';
+
+const nextImg = new Image();
+nextImg.src = 'next-svgrepo-com.svg';
+
+const images = [loteriaImg, barajaImg, backgroundImg, buenasImg, resetImg, nextImg];
 
 const loadLoop = setInterval(() => {
 	const imagesLoaded = images.reduce((bool, img) => img.complete && bool, true);
@@ -436,7 +442,7 @@ function loadApp() {
 
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
-	flipAudio.volume = 0.35;
+	flipAudio.volume = 0.2;
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([100]);
@@ -480,6 +486,12 @@ function loadApp() {
 	// DOM element that shows the next card when the option is available
 	const next = document.getElementById("siguiente");
 
+	const ui = [
+		document.getElementById("victory_background"),
+		carta,
+		cartaHistory
+	];
+
 	// DOM element that shows the time remaining on the current baraja
 	const nextTimer = document.getElementById("siguiente_timer");
 
@@ -490,24 +502,40 @@ function loadApp() {
 
 	const timerHeadOpacity = 1;
 
-	// const toleranceMS = 10;
-
-	// Engine that controls the timer animation
-	let lastTickTime = Date.now();
+	// Color to be used by the timer
 	let timerColor = '';
-	const timer = engine(() => {
-		const deg = ((Date.now() - lastTickTime /*+ (1000 / fps) - toleranceMS*/) % dispTime) / dispTime * 360; // 360 degrees in a circle
-		const gradient = `conic-gradient(from 0deg, rgba(${timerColor}, ${timerTailOpacity}) 0deg, rgba(${timerColor}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
-
-
-		nextTimer.style.background = gradient;
-	}, 1000 / fps).useAnimationFrames();
-
-	// Generate the initial deck that can be used by the game
-	const loteria = loteriaDeck.map((card, i) => [card[0], iTo2D(i, 6, 9), card[1]]);
 
 	// Holds the current game
 	let game = false;
+
+	const timer = (function(g) {
+		let lastTickTime = Date.now();
+
+		const beat = engine(() => {
+			let deg = 360; // 360 degrees in a circle
+
+			deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
+
+			const gradient = `conic-gradient(from 0deg, rgba(${timerColor}, ${timerTailOpacity}) 0deg, rgba(${timerColor}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
+			nextTimer.style.background = gradient;
+		}, 1000 / fps).useAnimationFrames();
+
+		return {
+			reset: () => lastTickTime = Date.now(),
+
+			run: function() {
+				this.reset();
+				beat.run();
+			},
+
+			stop: beat.stop,
+
+			step: beat.step
+		};
+	})(game);
+
+	// Generate the initial deck that can be used by the game
+	const loteria = loteriaDeck.map((card, i) => [card[0], iTo2D(i, 6, 9), card[1]]);
 
 	// Populate the history container with the appropriate number of card slots
 	const cartaHistoryDOMArr = Array.from({length: historySize}, () => {
@@ -580,28 +608,30 @@ function loadApp() {
 
 		return {
 			// Simple start
-			run: () => {
-				if (!usingAnimationFrames) {
-					engineID = setInterval(fn, time, ...args)
-				}
-
-				else {
-					startTime = Date.now();
-
-					let engineLoop;
-					engineLoop = () => {
-						if (startTime > 0) {
-							// The minimum amount of time has elapsed to call the function again
-							if ((Date.now() - startTime) >= time) {
-								fn(...args);
-								startTime = Date.now();
-							}
-							
-							engineID = requestAnimationFrame(engineLoop);
-						}
+			run: function() {
+				if (!this.isRunning()) {
+					if (!usingAnimationFrames) {
+						engineID = setInterval(fn, time, ...args)
 					}
 
-					engineLoop();
+					else {
+						startTime = Date.now();
+
+						let engineLoop;
+						engineLoop = () => {
+							if (startTime > 0) {
+								// The minimum amount of time has elapsed to call the function again
+								if ((Date.now() - startTime) >= time) {
+									fn(...args);
+									startTime = Date.now();
+								}
+								
+								engineID = requestAnimationFrame(engineLoop);
+							}
+						}
+
+						engineLoop();
+					}
 				}
 			},
 
@@ -657,57 +687,62 @@ function loadApp() {
 	}
 
 	function showNextCard(gameDeck, cardDOMElement, synthesizer, historyQueue) {
-		console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
+		if (gameIndex < gameDeck.length) {
+			console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
 
-		const pos = gameDeck[gameIndex][X_Y];
-		timerColor = gameDeck[gameIndex][COLOR];
+			const pos = gameDeck[gameIndex][X_Y];
+			timerColor = gameDeck[gameIndex][COLOR];
 
-		// Initialize the card flip
-		flipAudio.play();
-		document.getElementById("spacer").classList.toggle("playing");
-		cardDOMElement.classList.toggle("flipped");
+			// Initialize the card flip
+			flipAudio.play();
+			document.getElementById("spacer").classList.toggle("playing");
+			cardDOMElement.classList.toggle("flipped");
 
-		// Show the next button that should now be available
-		next.classList.remove("inactive");
+			// Show the next button that should now be available
+			next.classList.remove("inactive");
 
-		// Delay a bit to let the card turning animation complete
-		setTimeout(() => {
-			// Change the card that's being displayed
-			cardDOMElement.style.background = `url("${loteriaImg.src}")`;
-			cardDOMElement.style.backgroundSize = "900%";
-			cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
-
-			cardCount.classList.add("counting");
-			cardCount.innerText = `${gameIndex + 1} / ${loteriaDeck.length}`;
-
-			// Pulse to the user that a new card is coming
-			flipPulse();
-
-			// Only add data to the history queue once there's at least 1 old card
-			if (gameIndex > 0) {
-				historyQueue.push(gameDeck[gameIndex - 1]);
-			}
-
-			// Finalize the card flip
+			// Delay a bit to let the card turning animation complete
 			setTimeout(() => {
-				document.getElementById("spacer").classList.toggle("playing");
-				cardDOMElement.classList.toggle("flipped");
+				// Change the card that's being displayed
+				cardDOMElement.style.background = `url("${loteriaImg.src}")`;
+				cardDOMElement.style.backgroundSize = "900%";
+				cardDOMElement.style.backgroundPosition = `${12.5 * pos.x}% ${20 * pos.y}%`;
 
-				// Announce the new card to the players
-				synthesizer.stop();
-				synthesizer.play(gameDeck[gameIndex][NAME]);
+				cardCount.classList.add("counting");
+				cardCount.innerText = `${gameIndex + 1} / ${loteriaDeck.length}`;
 
-				if (gameIndex + 1 < gameDeck.length) {
+				// Pulse to the user that a new card is coming
+				flipPulse();
+
+				// Only add data to the history queue once there's at least 1 old card
+				if (gameIndex > 0) {
+					historyQueue.push(gameDeck[gameIndex - 1]);
+				}
+
+				// Finalize the card flip
+				setTimeout(() => {
+					document.getElementById("spacer").classList.toggle("playing");
+					cardDOMElement.classList.toggle("flipped");
+
+					// Announce the new card to the players
+					synthesizer.stop();
+					synthesizer.play(gameDeck[gameIndex][NAME]);
+
 					gameIndex++;
-				}
 
-				// TODO: Eliminate this and replace it with an option to continue looping or end the game
-				else {
-					gameIndex = 0;
-					shuffleDeck(gameDeck);
-				}
-			}, 50);
-		}, 100);
+					// TODO: Eliminate this and replace it with an option to continue looping or end the game
+					if (gameIndex >= gameDeck.length) {
+						// gameIndex = 0;
+						// shuffleDeck(gameDeck);
+						timer.stop();
+						timer.reset();
+						timer.step();
+
+						next.style.backgroundImage = `url(${resetImg.src})`;
+					}
+				}, 50);
+			}, 100);
+		}
 	}
 
 	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
@@ -747,7 +782,6 @@ function loadApp() {
 		setTimeout(() => {
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
-			lastTickTime = Date.now();
 			timer.run();
 			gameLoop.run();
 		}, 4000);
@@ -785,8 +819,9 @@ function loadApp() {
 					buenas.classList.toggle("alto");
 					stateText.style.opacity = 0;
 
-					lastTickTime = Date.now();
-					timer.run();
+					if (gameIndex < loteria.length)
+						timer.run();
+
 					game.run();
 				}
 
@@ -802,18 +837,57 @@ function loadApp() {
 		}
 	});
 
+	// Everything that happens to reset a game to its initial condition
+	const resetGame = () => {
+		if (game) {
+			game.stop();
+		}
+
+		game = false;
+
+		document.getElementById("spacer").classList.toggle("playing");
+
+		carta.style.background = `url("${barajaImg.src}")`;
+		carta.style.backgroundPosition = "center";
+		carta.style.backgroundSize = "100% 100%";
+		cartaColor();
+
+		cardCount.classList.remove("counting");
+		cardCount.innerText = '';
+
+		cartaHistoryDOMArr.forEach(e => {
+			e.style.background = 'none';
+			e.style.border = 'none';
+		});
+
+		stateText.innerText = `¡Ámonos!`;
+		stateText.style.opacity = 1;
+
+		next.style.backgroundImage = `url(${nextImg.src})`;
+		next.classList.remove("alto");
+		next.classList.add("inactive");
+
+		ui.forEach(e => e.classList.remove("hidden"));
+		ui.forEach(e => e.classList.remove("buenas"));
+	};
+
 	// Make the next button go to the next card
 	next.addEventListener(activator, () => {
 		// "engage" the click
-		next.classList.toggle('clicked');
+		next.classList.add('clicked');
 
-		lastTickTime = Date.now();
-		game.stop();
-		game.step();
-		game.run();
+		// The next button becomes a refresh button when the game index is past its limit
+		if (gameIndex >= loteria.length) {
+			resetGame();
+		} else {
+			timer.reset();
+			game.stop();
+			game.step();
+			game.run();
+		}
 
 		// "release" the click
-		setTimeout(() => next.classList.toggle('clicked'), 100);
+		setTimeout(() => next.classList.remove('clicked'), 100);
 	});
 
 	// Make the buenas button declare a winner
@@ -831,44 +905,15 @@ function loadApp() {
 		buenas.classList.remove("alto");
 
 		// Hide the main UI and show the victory screen, and play the victory sound
-		const ui = [
-			document.getElementById("victory_background"),
-			carta,
-			cartaHistory
-		];
-		ui.forEach(e => e.classList.toggle("buenas"));
+		ui.forEach(e => e.classList.add("buenas"));
 		buenasAudio.play();
 
+		// Give the ui enough time to fade away before hiding it
 		setTimeout(() => {
-			ui.forEach(e => e.classList.toggle("hidden"));
+			ui.forEach(e => e.classList.add("hidden"));
 
 			// Restore the game to its original state once enough time has passed on the buenas screen
-			setTimeout(() => {
-				game = false;
-
-				document.getElementById("spacer").classList.toggle("playing");
-
-				carta.style.background = `url("${barajaImg.src}")`;
-				carta.style.backgroundPosition = "center";
-				carta.style.backgroundSize = "100% 100%";
-				cartaColor();
-
-				cardCount.classList.remove("counting");
-				cardCount.innerText = '';
-
-				cartaHistoryDOMArr.forEach(e => {
-					e.style.background = 'none';
-					e.style.border = 'none';
-				});
-
-				stateText.innerText = `¡Ámonos!`;
-
-				next.classList.remove("alto");
-				next.classList.add("inactive");
-
-				ui.forEach(e => e.classList.toggle("hidden"));
-				ui.forEach(e => e.classList.toggle("buenas"));
-			}, buenasTime);
+			setTimeout(resetGame, buenasTime);
 		}, 600);
 	});
 
