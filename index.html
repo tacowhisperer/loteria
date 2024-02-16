@@ -514,14 +514,22 @@ function loadApp() {
 		const beat = engine(() => {
 			let deg = 360; // 360 degrees in a circle
 
-			deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
+			if (Number.isFinite(lastTickTime)) {
+				deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
+			} else {
+				deg = 0;
+				lastTickTime = Date.now();
+			}
 
 			const gradient = `conic-gradient(from 0deg, rgba(${timerColor}, ${timerTailOpacity}) 0deg, rgba(${timerColor}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 			nextTimer.style.background = gradient;
 		}, 1000 / fps).useAnimationFrames();
 
 		return {
-			reset: () => lastTickTime = Date.now(),
+			reset: function() {
+				lastTickTime = Infinity;
+				this.step();
+			},
 
 			run: function() {
 				this.reset();
@@ -724,6 +732,9 @@ function loadApp() {
 					document.getElementById("spacer").classList.toggle("playing");
 					cardDOMElement.classList.toggle("flipped");
 
+					// Start the timer once the card has finished flipping
+					timer.run();
+
 					// Announce the new card to the players
 					synthesizer.stop();
 					synthesizer.play(gameDeck[gameIndex][NAME]);
@@ -736,7 +747,6 @@ function loadApp() {
 						// shuffleDeck(gameDeck);
 						timer.stop();
 						timer.reset();
-						timer.step();
 
 						next.style.backgroundImage = `url(${resetImg.src})`;
 					}
@@ -782,7 +792,6 @@ function loadApp() {
 		setTimeout(() => {
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
-			timer.run();
 			gameLoop.run();
 		}, 4000);
 
@@ -819,8 +828,9 @@ function loadApp() {
 					buenas.classList.toggle("alto");
 					stateText.style.opacity = 0;
 
-					if (gameIndex < loteria.length)
+					if (gameIndex < loteria.length) {
 						timer.run();
+					}
 
 					game.run();
 				}
@@ -880,6 +890,7 @@ function loadApp() {
 		if (gameIndex >= loteria.length) {
 			resetGame();
 		} else {
+			timer.stop();
 			timer.reset();
 			game.stop();
 			game.step();
