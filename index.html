@@ -495,11 +495,10 @@ function loadApp() {
 	// DOM element that shows the time remaining on the current baraja
 	const nextTimer = document.getElementById("siguiente_timer");
 
-	// Timer settings
-	const fps = 24;
-
+	// Opacity of the tail of the timer that circles around the "Next"/"Restart" button
 	const timerTailOpacity = 0.5;
 
+	// Opacity of the head of the timer that circles around the "Next"/"Restart" button
 	const timerHeadOpacity = 1;
 
 	// Color to be used by the timer
@@ -509,11 +508,15 @@ function loadApp() {
 	let game = false;
 
 	const timer = (function(g) {
+		// Always animate at the best time possible with requestAnimationFrame
+		const ANIMATION_MS = 0;
+
 		let lastTickTime = Date.now();
 
 		const beat = engine(() => {
 			let deg = 360; // 360 degrees in a circle
 
+			// If the timer was reset, then this next value must be 0
 			if (Number.isFinite(lastTickTime)) {
 				deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
 			} else {
@@ -523,7 +526,7 @@ function loadApp() {
 
 			const gradient = `conic-gradient(from 0deg, rgba(${timerColor}, ${timerTailOpacity}) 0deg, rgba(${timerColor}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 			nextTimer.style.background = gradient;
-		}, 1000 / fps).useAnimationFrames();
+		}, ANIMATION_MS).useAnimationFrames();
 
 		return {
 			reset: function() {
@@ -614,30 +617,30 @@ function loadApp() {
 		let usingAnimationFrames = false;
 		let startTime = -1;
 
+		// If using requestAnimationFrame, interval can be dynamically changed between frame calls
+		let currentInterval = time;
+		const engineLoop = () => {
+			if (startTime > 0) {
+				// The minimum amount of time has elapsed to call the function again
+				if ((Date.now() - startTime) >= currentInterval) {
+					fn(...args);
+					startTime = Date.now();
+				}
+				
+				engineID = requestAnimationFrame(engineLoop);
+			}
+		}
+
 		return {
 			// Simple start
 			run: function() {
 				if (!this.isRunning()) {
 					if (!usingAnimationFrames) {
-						engineID = setInterval(fn, time, ...args)
+						engineID = setInterval(fn, currentInterval, ...args);
 					}
 
 					else {
 						startTime = Date.now();
-
-						let engineLoop;
-						engineLoop = () => {
-							if (startTime > 0) {
-								// The minimum amount of time has elapsed to call the function again
-								if ((Date.now() - startTime) >= time) {
-									fn(...args);
-									startTime = Date.now();
-								}
-								
-								engineID = requestAnimationFrame(engineLoop);
-							}
-						}
-
 						engineLoop();
 					}
 				}
@@ -679,7 +682,13 @@ function loadApp() {
 
 			// Use animationframe instead of setinterval to power the engine
 			useAnimationFrames: function() {
-				useAnimationFrames = true;
+				usingAnimationFrames = true;
+				return this;
+			},
+
+			// Update the interval which the engine runs
+			updateInterval: function(newInterval) {
+				currentInterval = newInterval;
 				return this;
 			}
 		};
@@ -699,7 +708,6 @@ function loadApp() {
 			console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
 
 			const pos = gameDeck[gameIndex][X_Y];
-			timerColor = gameDeck[gameIndex][COLOR];
 
 			// Initialize the card flip
 			flipAudio.play();
@@ -734,6 +742,7 @@ function loadApp() {
 
 					// Start the timer once the card has finished flipping
 					timer.run();
+					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
 					synthesizer.stop();
