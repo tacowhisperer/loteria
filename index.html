@@ -44,19 +44,6 @@
 		}
 
 		body {
-			/*background-color: black;
-
-			height: 100vh;
-			width: 100vw;
-
-			display: flex;
-			flex-direction: row;
-			flex-wrap: nowrap;
-			justify-content: center;
-			align-items: center;
-
-			overflow: hidden;*/
-
 			background-color: black;
 			position: fixed;
 			top: 0;
@@ -67,13 +54,8 @@
 		}
 
 		@keyframes diagonalAnimation {
-			0% {
-				background-position: 0 0;
-			}
-
-			100% {
-				background-position: var(--background-image-width) var(--background-image-height);
-			}
+			0% { background-position: 0 0; }
+			100% { background-position: var(--background-image-width) var(--background-image-height); }
 		}
 
 		#background {
@@ -405,28 +387,75 @@ const loadLoop = setInterval(() => {
 function loadApp() {
 	// Baraja theme colors
 	const YELLOW = '220, 180, 10';
+	const LIGHT_YELLOW = '250, 220, 100';
 	const BLUE = '10, 175, 220';
 	const RED = '220, 20, 10';
 	const MAGENTA = '220, 10, 220';
 	const GREEN = '10, 175, 10';
 	const WHITE = '250, 250, 250';
-	const PINK = '240, 5, 150';
+	const BLACK = '0, 0, 0';
+	const PINK = '235, 60, 165';
+	const SALMON = '240, 125, 190';
+	const SKIN = '240, 145, 125';
+	const SCARLET = '235, 5, 5';
+	const BROWN = '195, 55, 5';
+	const DARK_BROWN = '110, 50, 0';
 
 	const loteriaDeck = [
-		["El Gallo", GREEN], ["El Diablito", YELLOW], ["La Dama", BLUE], ["El Catrín", YELLOW],
-		["El Paraguas", BLUE], ["La Sirena", BLUE], ["La Escalera", PINK], ["La Botella", RED],
-		["El Barril", YELLOW], ["El Árbol", GREEN], ["El Melón", BLUE], ["El Valiente", BLUE],
-		["El Gorrito", YELLOW], ["La Muerte", MAGENTA], ["La Pera", GREEN], ["La Bandera", YELLOW],
-		["El Bandolón", BLUE], ["El Violoncello", WHITE], ["La Garza", BLUE], ["El Pájaro", BLUE],
-		["La Mano", BLUE], ["La Bota", YELLOW], ["La Luna", BLUE], ["El Cotorro", BLUE],
-		["El Borracho", MAGENTA], ["El Negrito", YELLOW], ["El Corazón", RED], ["La Sandía", YELLOW],
-		["El Tambor", BLUE], ["El Camarón", YELLOW], ["Las Jaras", BLUE], ["El Músico", BLUE],
-		["La Araña", BLUE], ["El Soldado", GREEN], ["La Estrella", BLUE], ["El Cazo", BLUE],
-		["El Mundo", BLUE], ["El Apache", BLUE], ["El Nopal", GREEN], ["El Alacrán", YELLOW],
-		["La Rosa", PINK], ["La Calavera", MAGENTA], ["La Campana", BLUE], ["El Cantarito", YELLOW],
-		["El Venado", BLUE], ["El Sol", RED], ["La Corona", BLUE], ["La Chalupa", GREEN],
-		["El Pino", BLUE], ["El Pescado", RED], ["La Palma", BLUE], ["La Maceta", BLUE],
-		["El Arpa", BLUE], ["La Rana", GREEN]
+		["El Gallo", [BLUE, GREEN]],
+		["El Diablito", [YELLOW, RED]],
+		["La Dama", [SALMON, BLUE]],
+		["El Catrín", [LIGHT_YELLOW, SALMON]],
+		["El Paraguas", [BLACK, BLUE]],
+		["La Sirena", [BLUE, RED]],
+		["La Escalera", [PINK, BLUE]],
+		["La Botella", [SALMON, RED]],
+		["El Barril", [YELLOW, GREEN]],
+		["El Árbol", [SALMON, GREEN]],
+		["El Melón", [BLUE, SKIN]],
+		["El Valiente", [SALMON, BLUE]],
+		["El Gorrito", [LIGHT_YELLOW, RED]],
+		["La Muerte", [SALMON, YELLOW]],
+		["La Pera", [BLUE, GREEN]],
+		["La Bandera", [LIGHT_YELLOW, GREEN]],
+		["El Bandolón", [BLUE, LIGHT_YELLOW]],
+		["El Violoncello", [WHITE, YELLOW]],
+		["La Garza", [BLUE, GREEN]],
+		["El Pájaro", [RED, YELLOW]],
+		["La Mano", [SKIN, BLUE]],
+		["La Bota", [BLACK, YELLOW]],
+		["La Luna", [BLUE, WHITE]],
+		["El Cotorro", [SCARLET, GREEN]],
+		["El Borracho", [LIGHT_YELLOW, SALMON]],
+		["El Negrito", [LIGHT_YELLOW, BLUE]],
+		["El Corazón", [LIGHT_YELLOW, RED]],
+		["La Sandía", [PINK, GREEN]],
+		["El Tambor", [BLUE, YELLOW]],
+		["El Camarón", [YELLOW, RED]],
+		["Las Jaras", [BLUE, YELLOW]],
+		["El Músico", [YELLOW, BLUE]],
+		["La Araña", [BLACK, BLUE]],
+		["El Soldado", [YELLOW, SALMON]],
+		["La Estrella", [WHITE, BLUE]],
+		["El Cazo", [SCARLET, LIGHT_YELLOW]],
+		["El Mundo", [BLUE, LIGHT_YELLOW]],
+		["El Apache", [LIGHT_YELLOW, SKIN]],
+		["El Nopal", [GREEN, BLUE]],
+		["El Alacrán", [BLACK, LIGHT_YELLOW]],
+		["La Rosa", [BLUE, PINK]],
+		["La Calavera", [SALMON, LIGHT_YELLOW]],
+		["La Campana", [BLUE, BROWN]],
+		["El Cantarito", [LIGHT_YELLOW, BROWN]],
+		["El Venado", [BLUE, DARK_BROWN]],
+		["El Sol", [BLUE, RED]],
+		["La Corona", [YELLOW, BLUE]],
+		["La Chalupa", [BLUE, GREEN]],
+		["El Pino", [SALMON, GREEN]],
+		["El Pescado", [MAGENTA, BLUE]],
+		["La Palma", [SALMON, GREEN]],
+		["La Maceta", [BROWN, BLUE]],
+		["El Arpa", [BLUE, YELLOW]],
+		["La Rana", [BLUE, GREEN]]
 	];
 
 	const u = Math.random;
@@ -442,7 +471,7 @@ function loadApp() {
 
 	// Audio cue for fliping the card
 	const flipAudio = new Audio('flipcard-91468.mp3');
-	flipAudio.volume = 0.2;
+	flipAudio.volume = 0.18;
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([50]);
@@ -496,13 +525,13 @@ function loadApp() {
 	const nextTimer = document.getElementById("siguiente_timer");
 
 	// Opacity of the tail of the timer that circles around the "Next"/"Restart" button
-	const timerTailOpacity = 0.5;
+	const timerTailOpacity = 1;
 
 	// Opacity of the head of the timer that circles around the "Next"/"Restart" button
 	const timerHeadOpacity = 1;
 
-	// Color to be used by the timer
-	let timerColor = '';
+	// Colors to be used by the timer
+	let timerColor = ['', ''];
 
 	// Holds the current game
 	let game = false;
@@ -524,7 +553,7 @@ function loadApp() {
 				lastTickTime = Date.now();
 			}
 
-			const gradient = `conic-gradient(from 0deg, rgba(${timerColor}, ${timerTailOpacity}) 0deg, rgba(${timerColor}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
+			const gradient = `conic-gradient(from 0deg, rgba(${timerColor[0]}, ${timerTailOpacity}) 0deg, rgba(${timerColor[1]}, ${timerHeadOpacity}) ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 			nextTimer.style.background = gradient;
 		}, ANIMATION_MS).useAnimationFrames();
 
@@ -750,10 +779,8 @@ function loadApp() {
 
 					gameIndex++;
 
-					// TODO: Eliminate this and replace it with an option to continue looping or end the game
+					// Force the user to reset the deck or declare buenas using the normal interface if out of cards
 					if (gameIndex >= gameDeck.length) {
-						// gameIndex = 0;
-						// shuffleDeck(gameDeck);
 						timer.stop();
 						timer.reset();
 
@@ -776,6 +803,7 @@ function loadApp() {
 				play: msg => {s.text = msg; window.speechSynthesis.speak(s);}
 			};
 		})() : {
+			stop: () => {},
 			play: msg => console.log(`Speech synthesizer not supported!`)
 		};
 
@@ -802,7 +830,7 @@ function loadApp() {
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
 			gameLoop.run();
-		}, 4000);
+		}, 3800);
 
 		return gameLoop;
 	}
