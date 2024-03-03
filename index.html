@@ -60,18 +60,22 @@
 
 		#background {
 			position: absolute;
-			opacity: 0.65;
+			opacity: 0.3;
 			top: 0;
 			left: 0;
 			width: 100vw;
 			height: 100vh;
-			transition: opacity 0.1s ease;
+			transition: opacity 0.2s ease;
 
 			background-image: url("real_esrgan_loteria.jpg");
 			background-size: var(--background-image-width);
 			animation: diagonalAnimation 360s linear infinite;
 
 			z-index: -1000;
+		}
+
+		#background.inactive {
+			opacity: 0.5;
 		}
 
 		#background.buenas {
@@ -317,11 +321,159 @@
 		.removed {
 			display: none !important;
 		}
+
+		#menu_btn_container {
+			position: fixed;
+
+			padding: 1.5rem;
+
+			top: 0;
+			left: 0;
+			z-index: 3;
+		}
+
+		#menu_btn.inactive {
+			display: flex;
+		}
+
+		#menu_btn {
+			display: none;
+			flex-direction: column;
+			cursor: pointer;
+		}
+
+		.hamburger_bar {
+			background-color: #eee;
+			border-radius: 0.5rem;
+			width: 3.5rem;
+			height: 0.5rem;
+			margin: 0.3rem 0;
+			transition: 0.1s;
+		}
+
+		.change .hamburger_bar:nth-child(1) {
+			transform: translate(0, 1.07rem) rotate(-45deg);
+		}
+
+		.change .hamburger_bar:nth-child(2) {
+			transform: scaleX(0);
+			opacity: 0;
+		}
+
+		.change .hamburger_bar:nth-child(3) {
+			transform: translate(0, -1.07rem) rotate(45deg);
+		}
+
+		#menu_ribbon {
+			display: flex;
+			position: fixed;
+			background-color: rgba(0, 0, 0, 0.65);
+			color: #eee;
+			font-family: 'Protest Riot', sans-serif;
+			font-size: 2.25em;
+			top: 0;
+			left: 0;
+			overflow-y: scroll;
+			padding-top: 10rem;
+			padding-bottom: 10rem;
+			height: 100vh;
+			width: min(100vw, 100vh);
+			transform: translate(-100%, 0);
+			transition: 0.1s ease;
+			z-index: 2;
+		}
+
+		#menu_ribbon > * {
+			margin-left: 1.5rem;
+			margin-top: 0.5rem;
+			margin-bottom: 0.5rem;
+		}
+
+		#menu_ribbon.engaged {
+			transform: translate(0, 0);
+		}
+
+		#menu_container {
+			list-style-type: none;
+			width: 100%;
+		}
+
+		.menu_option {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: flex-start;
+			column-gap: 2rem;
+			align-items: center;
+			align-content: center;
+		}
+
+		.menu_option + .menu_option {
+			margin-top: 4rem;
+			padding-top: 4rem;
+			border-top: 1px solid;
+			border-image: linear-gradient(to right, #d80b77, transparent) 1 0 0 0;
+		}
+
+		#menu_overlay {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100vw;
+			height: 100vh;
+			z-index: 1;
+		}
+
+		#menu_overlay.engaged {
+			display: block;
+		}
+
+		/* Chrome, Safari, Edge, Opera */
+		input::-webkit-outer-spin-button, input::-webkit-inner-spin-button {
+			-webkit-appearance: none;
+			margin: 0;
+		}
+
+		/* Firefox */
+		input[type=number] {
+			-moz-appearance: textfield;
+		}
+
+		input {
+			aspect-ratio: 1 / 1;
+			color: #eee;
+			display: block;
+			background-color: black;
+			border: none;
+			border-radius: 1rem;
+			font-family: 'Protest Riot', sans-serif;
+			font-size: 1.25em;
+			text-align: center;
+			padding: 1rem;
+			height: 7rem;
+		}
 	</style>
 </head>
 <body>
 
 <div id="container">
+	<div id="menu_btn_container" class="removed">
+		<div id="menu_btn">
+			<div class="hamburger_bar"></div>
+			<div class="hamburger_bar"></div>
+			<div class="hamburger_bar"></div>
+		</div>
+	</div>
+
+	<div id="menu_ribbon" class="removed">
+		<ul id="menu_container">
+			<!-- <li class="menu_option"><p>Tamaño de Historial:</p><div style="height: 3rem; width: 3rem; background-color: white;"></div></li>
+			<li class="menu_option"><p>Reproducir Sonidos:</p><div style="height: 3rem; width: 3rem; background-color: blue;"></div></li> -->
+		</ul>
+	</div>
+
+	<div id="menu_overlay" class="removed"></div>
+
 	<div id="carta" class="removed">
 		<p id="state_text">¡Ámonos!</p>
 		<p id="card_count"></p>
@@ -477,10 +629,10 @@ function loadApp() {
 	const flipPulse = () => window.navigator.vibrate([50]);
 
 	// The amount of time to show each card
-	const dispTime = 4000;
+	let dispTime = 4000;
 
 	// The number of previous cards to show on the side
-	const historySize = 5;
+	let historySize = 5;
 
 	// The amount of time to linger on the ¡BUENAS! screen
 	const buenasTime = 3000;
@@ -514,6 +666,34 @@ function loadApp() {
 
 	// DOM element that shows the next card when the option is available
 	const next = document.getElementById("siguiente");
+
+	// DOM element that holds the hamburger button for the menu
+	const menu = document.getElementById("menu_btn");
+
+	// DOM element that holds the menu ribbon
+	const menuRibbon = document.getElementById("menu_ribbon");
+
+	// DOM element that holds the menu options
+	const menuContainer = document.getElementById("menu_container");
+
+	// Generator function for a menu option
+	function menuOption(contentArray, mClass = "menu_option") {
+		const li = document.createElement("li");
+		li.classList.add(mClass);
+
+		contentArray.forEach(e => li.appendChild(e));
+		return li;
+	}
+
+	// DOM element that holds the menu overlay to disengage all other page elements
+	const menuOverlay = document.getElementById("menu_overlay");
+
+	// DOM element that holds the main background
+	const bg = document.getElementById("background");
+
+	// Set the initial state of the menu and background upon load
+	menu.classList.add("inactive");
+	bg.classList.add("inactive");
 
 	const ui = [
 		document.getElementById("victory_background"),
@@ -577,13 +757,6 @@ function loadApp() {
 	// Generate the initial deck that can be used by the game
 	const loteria = loteriaDeck.map((card, i) => [card[0], iTo2D(i, 6, 9), card[1]]);
 
-	// Populate the history container with the appropriate number of card slots
-	const cartaHistoryDOMArr = Array.from({length: historySize}, () => {
-		const card = document.createElement("div");
-		cartaHistory.appendChild(card);
-		return card;
-	});
-
 	// Position each history card correctly in the viewport and apply a fade from the top to the bottom
 	const positionHistory = () => {
 		if (historySize > 0) {
@@ -599,6 +772,79 @@ function loadApp() {
 			});
 		}
 	};
+
+	// Populate the history container with the appropriate number of card slots
+	let cartaHistoryDOMArr;
+	function populateHistory() {
+		cartaHistory.innerHTML = "";
+
+		cartaHistoryDOMArr = Array.from({length: historySize}, () => {
+			const card = document.createElement("div");
+			cartaHistory.appendChild(card);
+			return card;
+		});
+
+		positionHistory();
+	}
+	populateHistory();
+
+	function settingsStorage() {
+		const BARAJA_TIME = "barajaTime";
+		const HISTORY_SIZE = "historySize";
+		const SOUND_EFF = "soundEffects";
+
+		const DEFAULT_BARAJA_TIME = 4; // seconds
+		const DEFAULT_HISTORY_SIZE = 5; // baraja
+		const DEFAULT_SOUND_SETTING = true; // sound effects enabled
+
+		return {
+			set: function(key, item) {
+				localStorage.setItem(key, JSON.stringify(item));
+				return this;
+			},
+
+			get: function(key) {
+				const val = localStorage.getItem(key);
+				return typeof val !== 'string' ? val : JSON.parse(val);
+			},
+
+			setBarajaTime: function(time) {
+				return this.set(BARAJA_TIME, time);
+			},
+
+			setHistorySize: function(size) {
+				return this.set(HISTORY_SIZE, size);
+			},
+
+			setSoundEffects: function(bool) {
+				return this.set(SOUND_EFF, bool);
+			},
+
+			getBarajaTime: function() {
+				return this.get(BARAJA_TIME) || DEFAULT_BARAJA_TIME;
+			},
+
+			getHistorySize: function() {
+				return this.get(HISTORY_SIZE) || DEFAULT_HISTORY_SIZE;
+			},
+
+			getSoundEffectSetting: function() {
+				return this.get(SOUND_EFF) || DEFAULT_SOUND_SETTING;
+			},
+
+			getDefaultBarajaTime: function() {
+				return DEFAULT_BARAJA_TIME;
+			},
+
+			getDefaultHistorySize: function() {
+				return DEFAULT_HISTORY_SIZE;
+			},
+
+			getDefaultSoundEffectSetting: function() {
+				return DEFAULT_SOUND_SETTING;
+			}
+		}
+	}
 
 	function iTo2D(i, m, n) {
 		if (i < 0 || i >= m * n)
@@ -792,6 +1038,9 @@ function loadApp() {
 	}
 
 	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
+		menu.classList.remove("inactive");
+		bg.classList.remove("inactive");
+
 		shuffleDeck(gameDeck);
 
 		const synth = 'speechSynthesis' in window ? (() => {
@@ -834,8 +1083,6 @@ function loadApp() {
 
 		return gameLoop;
 	}
-
-	positionHistory();
 
 	// Make the big carta the main controller for the game
 	carta.addEventListener(activator, () => {
@@ -916,6 +1163,9 @@ function loadApp() {
 
 		ui.forEach(e => e.classList.remove("hidden"));
 		ui.forEach(e => e.classList.remove("buenas"));
+
+		menu.classList.add("inactive");
+		bg.classList.add("inactive");
 	};
 
 	// Make the next button go to the next card
@@ -964,6 +1214,52 @@ function loadApp() {
 			setTimeout(resetGame, buenasTime);
 		}, 600);
 	});
+
+	// Make the menu button engage the proper overlays
+	menu.addEventListener(activator, () => {
+		menu.classList.toggle("change");
+		menuRibbon.classList.toggle("engaged");
+		menuOverlay.classList.toggle("engaged");
+	});
+
+	// Add the different menu functionalities
+	const menuSettings = settingsStorage();
+
+	const createText = function(text) {
+		const p = document.createElement("p");
+		p.appendChild(document.createTextNode(text));
+		return p;
+	};
+
+	// Seconds per baraja
+	menuContainer.appendChild(menuOption((function() {
+		const input = document.createElement("input");
+		input.type = "number";
+		input.value = menuSettings.getBarajaTime();
+
+		input.addEventListener("input", () => {
+			menuSettings.setBarajaTime(input.value);
+			dispTime = input.value * 1000;
+		});
+
+		return [createText("Segundos por Baraja:"), input];
+	})()));
+
+	// History size
+	menuContainer.appendChild(menuOption((function() {
+		const input = document.createElement("input");
+		input.type = "number";
+		input.value = menuSettings.getHistorySize();
+
+		input.addEventListener("input", () => {
+			menuSettings.setHistorySize(input.value);
+			historySize = input.value;
+
+			populateHistory();
+		});
+
+		return [createText("Tamaño de Historial:"), input];
+	})()));
 
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
 	window.addEventListener("keydown", e => {
