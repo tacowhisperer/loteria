@@ -370,7 +370,7 @@
 			background-color: rgba(0, 0, 0, 0.65);
 			color: #eee;
 			font-family: 'Protest Riot', sans-serif;
-			font-size: 1.5em;
+			font-size: 1.35em;
 			top: 0;
 			left: 0;
 			overflow-y: scroll;
@@ -395,6 +395,7 @@
 
 		#menu_container {
 			list-style-type: none;
+			padding-left: 0;
 			width: 100%;
 		}
 
@@ -410,7 +411,7 @@
 		.menu_option + .menu_option {
 			margin-top: 4rem;
 			padding-top: 4rem;
-			border-top: 1px solid;
+			border-top: 0.15rem solid;
 			border-image: linear-gradient(to right, #d80b77, transparent) 1 0 0 0;
 		}
 
@@ -440,10 +441,10 @@
 		}
 
 		input {
-			aspect-ratio: 1 / 1;
+			aspect-ratio: 5 / 4;
 			color: #eee;
 			display: block;
-			background-color: black;
+			background-color: rgba(0, 0, 0, 0.55);
 			border: none;
 			border-radius: 1rem;
 			font-family: 'Protest Riot', sans-serif;
@@ -451,6 +452,45 @@
 			text-align: center;
 			padding: 1rem;
 			height: 5rem;
+		}
+
+		/* Toggle CSS */
+		.toggle-container {
+			display: inline-block;
+			position: relative;
+		}
+
+		.toggle-input {
+			display: none;
+		}
+
+		.toggle-track {
+			width: max(8vw, 8vh);
+			height: max(4vw, 4vh);
+			background-color: #ddd;
+			border-radius: max(4vw, 4vh);
+			top: 0;
+			left: 0;
+			transition: background-color 0.2s ease;
+		}
+
+		.toggle-thumb {
+			width: max(4vw, 4vh);
+			height: max(4vw, 4vh);
+			background-color: #fff;
+			border-radius: 50%;
+			position: absolute;
+			top: 0;
+			left: 0;
+			transition: transform 0.2s ease;
+		}
+
+		.toggle-input:checked + .toggle-track {
+			background-color: #d80b77;
+		}
+
+		.toggle-input:checked + .toggle-track .toggle-thumb {
+			transform: translateX(max(4vw, 4vh));
 		}
 	</style>
 </head>
@@ -467,8 +507,7 @@
 
 	<div id="menu_ribbon" class="removed">
 		<ul id="menu_container">
-			<!-- <li class="menu_option"><p>Tamaño de Historial:</p><div style="height: 3rem; width: 3rem; background-color: white;"></div></li>
-			<li class="menu_option"><p>Reproducir Sonidos:</p><div style="height: 3rem; width: 3rem; background-color: blue;"></div></li> -->
+			<!-- <li class="menu_option"><p>Reproducir Sonidos:</p><div style="height: 3rem; width: 3rem; background-color: blue;"></div></li> -->
 		</ul>
 	</div>
 
@@ -612,18 +651,43 @@ function loadApp() {
 
 	const u = Math.random;
 
+	function loteriaAudio(filename, volume = 1) {
+		const sound = new Audio(filename);
+
+		let muted = false;
+		return {
+			mute: function() {
+				muted = true;
+				sound.volume = 0;
+
+				return this;
+			},
+
+			unmute: function() {
+				muted = false;
+				sound.volume = volume;
+
+				return this;
+			},
+
+			play: () => sound.play()
+		};
+	}
+
 	// Determine if touch is available, and if so, use that instead of click events
 	const activator = window.ontouchstart ? "touchstart" : "click";
 
 	// Audio cue to ensure that user knows that the main action button was successfully clicked
-	const clickAudio = new Audio('multi-pop-2-188167.mp3');
+	const clickAudio = loteriaAudio('multi-pop-2-188167.mp3');
 
 	// Audio cue for declaring buenas!
-	const buenasAudio = new Audio('success-1-6297.mp3');
+	const buenasAudio = loteriaAudio('success-1-6297.mp3');
 
 	// Audio cue for fliping the card
-	const flipAudio = new Audio('flipcard-91468.mp3');
-	flipAudio.volume = 0.18;
+	const flipAudio = loteriaAudio('flipcard-91468.mp3', 0.17);
+
+	// All special sound effects
+	const audioUI = [clickAudio, buenasAudio, flipAudio];
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([50]);
@@ -793,7 +857,7 @@ function loadApp() {
 		const HISTORY_SIZE = "historySize";
 		const SOUND_EFF = "soundEffects";
 
-		const DEFAULT_BARAJA_TIME = 4; // seconds
+		const DEFAULT_BARAJA_TIME = 6; // seconds
 		const DEFAULT_HISTORY_SIZE = 5; // baraja
 		const DEFAULT_SOUND_SETTING = true; // sound effects enabled
 
@@ -816,7 +880,7 @@ function loadApp() {
 				return this.set(HISTORY_SIZE, size);
 			},
 
-			setSoundEffects: function(bool) {
+			setSoundEffectSetting: function(bool) {
 				return this.set(SOUND_EFF, bool);
 			},
 
@@ -971,6 +1035,8 @@ function loadApp() {
 
 	function shuffleDeck(gameDeck) {
 		gameIndex = 0;
+
+		// Fisher-Yates shuffle algorithm
 		for (let i = gameDeck.length - 1; i > 0; i--) {
 			const j = Math.floor(u() * (i + 1));
 
@@ -1250,6 +1316,7 @@ function loadApp() {
 		const input = document.createElement("input");
 		input.type = "number";
 		input.value = menuSettings.getHistorySize();
+		input.min = 0;
 
 		input.addEventListener("input", () => {
 			menuSettings.setHistorySize(input.value);
@@ -1259,6 +1326,42 @@ function loadApp() {
 		});
 
 		return [createText("Tamaño de Historial:"), input];
+	})()));
+
+	// Play sound effects or not
+	menuContainer.appendChild(menuOption((function() {
+		// Creation of the toggle slider
+		const input = document.createElement("input");
+		input.type = "checkbox";
+		input.checked = menuSettings.getSoundEffectSetting();
+		input.classList.add("toggle-input");
+
+		const toggleBtn = document.createElement("div");
+		toggleBtn.classList.add("toggle-container");
+
+		const toggleTrack = document.createElement("div");
+		toggleTrack.classList.add("toggle-track");
+
+		const toggleThumb = document.createElement("div");
+		toggleThumb.classList.add("toggle-thumb");
+
+		toggleTrack.appendChild(toggleThumb);
+		toggleBtn.appendChild(input);
+		toggleBtn.appendChild(toggleTrack);
+
+		// Restore the previous sessions sound setting
+		audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
+
+		// Activation of the toggle slider
+		toggleBtn.addEventListener(activator, () => {
+			input.checked = !input.checked;
+			menuSettings.setSoundEffectSetting(input.checked);
+
+			audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
+			clickAudio.play();
+		});
+
+		return [createText("Efectos de Sonido:"), toggleBtn];
 	})()));
 
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
