@@ -403,7 +403,7 @@
 			display: flex;
 			flex-wrap: wrap;
 			justify-content: flex-start;
-			column-gap: 2rem;
+			column-gap: max(2vw, 2vh);
 			align-items: center;
 			align-content: center;
 		}
@@ -686,8 +686,11 @@ function loadApp() {
 	// Audio cue for fliping the card
 	const flipAudio = loteriaAudio('flipcard-91468.mp3', 0.17);
 
+	// Audio cue for shuffling the deck
+	const shuffleAudio = loteriaAudio('card-shuffle-10_zkdC1fVu_NWM.mp3');
+
 	// All special sound effects
-	const audioUI = [clickAudio, buenasAudio, flipAudio];
+	const audioUI = [clickAudio, buenasAudio, flipAudio, shuffleAudio];
 
 	// Tactile cue for flipping the card
 	const flipPulse = () => window.navigator.vibrate([50]);
@@ -699,7 +702,7 @@ function loadApp() {
 	let historySize = 5;
 
 	// The amount of time to linger on the ¡BUENAS! screen
-	const buenasTime = 3000;
+	const buenasTime = 2700;
 
 	// Index of the current card to show on the big carta container
 	let gameIndex = 0;
@@ -1199,39 +1202,44 @@ function loadApp() {
 
 	// Everything that happens to reset a game to its initial condition
 	const resetGame = () => {
-		if (game) {
-			game.stop();
-		}
+		shuffleAudio.play();
 
-		game = false;
+		// Give the shuffle deck sound some time to play before loading the initial screen again
+		setTimeout(() => {
+			if (game) {
+				game.stop();
+			}
 
-		document.getElementById("spacer").classList.toggle("playing");
+			game = false;
 
-		carta.style.background = `url("${barajaImg.src}")`;
-		carta.style.backgroundPosition = "center";
-		carta.style.backgroundSize = "100% 100%";
-		cartaColor();
+			document.getElementById("spacer").classList.toggle("playing");
 
-		cardCount.classList.remove("counting");
-		cardCount.innerText = '';
+			carta.style.background = `url("${barajaImg.src}")`;
+			carta.style.backgroundPosition = "center";
+			carta.style.backgroundSize = "100% 100%";
+			cartaColor();
 
-		cartaHistoryDOMArr.forEach(e => {
-			e.style.background = 'none';
-			e.style.border = 'none';
-		});
+			cardCount.classList.remove("counting");
+			cardCount.innerText = '';
 
-		stateText.innerText = `¡Ámonos!`;
-		stateText.style.opacity = 1;
+			cartaHistoryDOMArr.forEach(e => {
+				e.style.background = 'none';
+				e.style.border = 'none';
+			});
 
-		next.style.backgroundImage = `url(${nextImg.src})`;
-		next.classList.remove("alto");
-		next.classList.add("inactive");
+			stateText.innerText = `¡Ámonos!`;
+			stateText.style.opacity = 1;
 
-		ui.forEach(e => e.classList.remove("hidden"));
-		ui.forEach(e => e.classList.remove("buenas"));
+			next.style.backgroundImage = `url(${nextImg.src})`;
+			next.classList.remove("alto");
+			next.classList.add("inactive");
 
-		menu.classList.add("inactive");
-		bg.classList.add("inactive");
+			ui.forEach(e => e.classList.remove("hidden"));
+			ui.forEach(e => e.classList.remove("buenas"));
+
+			menu.classList.add("inactive");
+			bg.classList.add("inactive");
+		}, 400);
 	};
 
 	// Make the next button go to the next card
