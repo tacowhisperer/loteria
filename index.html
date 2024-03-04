@@ -1516,7 +1516,10 @@ function loadApp() {
 
 					btn.style.backgroundColor = 'red';
 
-					setTimeout(resetBtn, 1000);
+					setTimeout(() => {
+						resetBtn();
+						resetting = false;
+					}, 1000);
 				}
 			}
 		});
