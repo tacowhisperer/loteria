@@ -514,7 +514,7 @@
 		}
 
 		.panic-button.active {
-			background-color: #d80b77;
+			background-color: #d80b7780;
 		}
 	</style>
 </head>
@@ -1472,6 +1472,7 @@ function loadApp() {
 
 	menuContainer.appendChild(menuOption((function() {
 		let resetTimer = 0;
+		let resetting = false;
 
 		const defaultStr = `❌(3)`;
 
@@ -1479,9 +1480,12 @@ function loadApp() {
 		btn.classList.add("panic-button");
 		btn.appendChild(createText(defaultStr));
 
+		const defaultBGColor = window.getComputedStyle(btn).getPropertyValue("background-color");
+
 		const resetBtn = () => {
 			btn.classList.remove("active");
 			btn.children[0].innerText = defaultStr;
+			btn.style.backgroundColor = defaultBGColor;
 		};
 
 		btn.addEventListener(activator, () => {
@@ -1500,11 +1504,20 @@ function loadApp() {
 					resetTimer = setTimeout(resetBtn, 7000);
 				} else {
 					btn.children[0].innerText = `❌(${count})`;
+
 					resetTimer = setTimeout(resetBtn, 3000);
 				}
 			} else {
-				resetters.forEach(r => r());
-				btn.children[0].innerText = defaultStr;
+				if (!resetting) {
+					clearTimeout(resetTimer);
+
+					resetters.forEach(r => r());
+					resetting = true;
+
+					btn.style.backgroundColor = 'red';
+
+					setTimeout(resetBtn, 1000);
+				}
 			}
 		});
 
