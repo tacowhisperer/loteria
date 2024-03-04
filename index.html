@@ -1499,7 +1499,7 @@ function loadApp() {
 
 				if (count <= 0) {
 					btn.classList.add("active");
-					btn.children[0].innerText = "✔️";
+					btn.children[0].innerText = "❌";
 
 					resetTimer = setTimeout(resetBtn, 7000);
 				} else {
@@ -1515,6 +1515,7 @@ function loadApp() {
 					resetting = true;
 
 					btn.style.backgroundColor = 'red';
+					btn.children[0].innerText = "✔️";
 
 					setTimeout(() => {
 						resetBtn();
