@@ -492,6 +492,22 @@
 		.toggle-input:checked + .toggle-track .toggle-thumb {
 			transform: translateX(max(4vw, 4vh));
 		}
+
+		/* Misc */
+		.panic-button {
+			aspect-ratio: 3 / 2;
+			background-color: #d80b77;
+			border-radius: min(2vw, 2vh);
+			display: flex;
+			justify-content: center;
+			align-items: center;
+
+			color: #eee;
+			cursor: pointer;
+			padding: max(2vw, 2vw);
+
+			height: min(15vw, 15vh);
+		}
 	</style>
 </head>
 <body>
@@ -693,7 +709,8 @@ function loadApp() {
 	const audioUI = [clickAudio, buenasAudio, flipAudio, shuffleAudio];
 
 	// Tactile cue for flipping the card
-	const flipPulse = () => window.navigator.vibrate([50]);
+	let vibrate = true;
+	const flipPulse = () => vibrate ? window.navigator.vibrate([60]) : null;
 
 	// The amount of time to show each card
 	let dispTime = 4000;
@@ -859,10 +876,12 @@ function loadApp() {
 		const BARAJA_TIME = "barajaTime";
 		const HISTORY_SIZE = "historySize";
 		const SOUND_EFF = "soundEffects";
+		const VIBRATE = "vibration";
 
 		const DEFAULT_BARAJA_TIME = 6; // seconds
 		const DEFAULT_HISTORY_SIZE = 5; // baraja
 		const DEFAULT_SOUND_SETTING = true; // sound effects enabled
+		const DEFAULT_VIBRATE_SETTING = true; // vibration on new card is enabled
 
 		return {
 			set: function(key, item) {
@@ -887,6 +906,10 @@ function loadApp() {
 				return this.set(SOUND_EFF, bool);
 			},
 
+			setVibrationSetting: function(bool) {
+				return this.set(VIBRATE, bool);
+			},
+
 			getBarajaTime: function() {
 				return this.get(BARAJA_TIME) || DEFAULT_BARAJA_TIME;
 			},
@@ -899,6 +922,10 @@ function loadApp() {
 				return this.get(SOUND_EFF) || DEFAULT_SOUND_SETTING;
 			},
 
+			getVibrationSetting: function() {
+				return this.get(VIBRATE) || DEFAULT_VIBRATE_SETTING;
+			},
+
 			getDefaultBarajaTime: function() {
 				return DEFAULT_BARAJA_TIME;
 			},
@@ -909,6 +936,10 @@ function loadApp() {
 
 			getDefaultSoundEffectSetting: function() {
 				return DEFAULT_SOUND_SETTING;
+			},
+			
+			getDefaultVibrationSetting: function() {
+				return DEFAULT_VIBRATE_SETTING;
 			}
 		}
 	}
@@ -1305,43 +1336,10 @@ function loadApp() {
 		return p;
 	};
 
-	// Seconds per baraja
-	menuContainer.appendChild(menuOption((function() {
-		const input = document.createElement("input");
-		input.type = "number";
-		input.value = menuSettings.getBarajaTime();
-
-		input.addEventListener("input", () => {
-			menuSettings.setBarajaTime(input.value);
-			dispTime = input.value * 1000;
-		});
-
-		return [createText("Segundos por Baraja:"), input];
-	})()));
-
-	// History size
-	menuContainer.appendChild(menuOption((function() {
-		const input = document.createElement("input");
-		input.type = "number";
-		input.value = menuSettings.getHistorySize();
-		input.min = 0;
-
-		input.addEventListener("input", () => {
-			menuSettings.setHistorySize(input.value);
-			historySize = input.value;
-
-			populateHistory();
-		});
-
-		return [createText("Tamaño de Historial:"), input];
-	})()));
-
-	// Play sound effects or not
-	menuContainer.appendChild(menuOption((function() {
+	const createToggleSwitch = function() {
 		// Creation of the toggle slider
 		const input = document.createElement("input");
 		input.type = "checkbox";
-		input.checked = menuSettings.getSoundEffectSetting();
 		input.classList.add("toggle-input");
 
 		const toggleBtn = document.createElement("div");
@@ -1357,19 +1355,134 @@ function loadApp() {
 		toggleBtn.appendChild(input);
 		toggleBtn.appendChild(toggleTrack);
 
+		return [input, toggleBtn];
+	}
+
+	// Access array for the menu reset button
+	const resetters = [];
+
+	// Seconds per baraja
+	menuContainer.appendChild(menuOption((function() {
+		const input = document.createElement("input");
+		input.type = "number";
+		input.value = menuSettings.getBarajaTime();
+
+		const setter = () => {
+			menuSettings.setBarajaTime(input.value);
+			dispTime = input.value * 1000;
+		};
+
+		input.addEventListener("input", setter);
+
+		resetters.push(() => {
+			input.value = menuSettings.getDefaultBarajaTime();
+			setter();
+		});
+
+		return [createText("Segundos por Baraja:"), input];
+	})()));
+
+	// History size
+	menuContainer.appendChild(menuOption((function() {
+		const input = document.createElement("input");
+		input.type = "number";
+		input.value = menuSettings.getHistorySize();
+		input.min = 0;
+
+		const setter = () => {
+			menuSettings.setHistorySize(input.value);
+			historySize = input.value;
+
+			populateHistory();
+		};
+
+		input.addEventListener("input", setter);
+
+		resetters.push(() => {
+			input.value = menuSettings.getDefaultHistorySize();
+			setter();
+		});
+
+		return [createText("Tamaño del Historial:"), input];
+	})()));
+
+	// Play sound effects or not
+	menuContainer.appendChild(menuOption((function() {
+		const [input, toggleBtn] = createToggleSwitch();
+		input.checked = menuSettings.getSoundEffectSetting();
+
 		// Restore the previous sessions sound setting
 		audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
 
-		// Activation of the toggle slider
-		toggleBtn.addEventListener(activator, () => {
+		const setter = () => {
 			input.checked = !input.checked;
 			menuSettings.setSoundEffectSetting(input.checked);
 
 			audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
+		};
+
+		// Activation of the toggle slider
+		toggleBtn.addEventListener(activator, () => {
+			setter();
 			clickAudio.play();
 		});
 
+		resetters.push(() => {
+			input.checked = !menuSettings.getDefaultSoundEffectSetting(); // setter flips this from expected value
+			setter();
+		});
+
 		return [createText("Efectos de Sonido:"), toggleBtn];
+	})()));
+
+	// Vibrate phone on new card or not
+	menuContainer.appendChild(menuOption((function() {
+		const [input, toggleBtn] = createToggleSwitch();
+		input.checked = menuSettings.getVibrationSetting();
+
+		vibrate = input.checked;
+
+		const setter = () => {
+			input.checked = !input.checked;
+			menuSettings.setVibrationSetting(input.checked);
+
+			vibrate = input.checked;
+		};
+
+		toggleBtn.addEventListener(activator, () => {
+			setter();
+			flipPulse();
+		});
+
+		resetters.push(() => {
+			input.checked = !menuSettings.getDefaultVibrationSetting(); // setter flips this from expected value
+			setter();
+		});
+
+		return [createText("Vibrar al Barajear:"), toggleBtn];
+	})()));
+
+	menuContainer.appendChild(menuOption((function() {
+		const defaultStr = "❌(3)";
+
+		const btn = document.createElement("div");
+		btn.classList.add("panic-button");
+		btn.appendChild(createText(defaultStr));
+
+		btn.addEventListener(activator, () => {
+			const btnText = btn.children[0].innerText;
+			const btnNum = btnText.substring(2, btnText.length - 1);
+
+			if (btnNum.match(/^\d+$/)) {
+				const count = btnNum.match(/^\d+$/) ? Number.parseInt(btnNum) - 1 : 0;
+				btn.children[0].innerText = count <= 0 ? "✔️" : `❌(${count})`;
+			} else {
+				resetters.forEach(r => r());
+				btn.children[0].innerText = defaultStr;
+			}
+		});
+
+		return [createText("Resetear Ajustes:"), btn];
 	})()));
 
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
