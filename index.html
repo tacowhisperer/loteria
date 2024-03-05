@@ -1514,13 +1514,13 @@ function loadApp() {
 					resetters.forEach(r => r());
 					resetting = true;
 
-					btn.style.backgroundColor = 'red';
+					btn.style.backgroundColor = '#046a6a';
 					btn.children[0].innerText = "✔️";
 
 					setTimeout(() => {
 						resetBtn();
 						resetting = false;
-					}, 1000);
+					}, 2000);
 				}
 			}
 		});
