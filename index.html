@@ -678,17 +678,14 @@ function loadApp() {
 	function loteriaAudio(filename, volume = 1) {
 		const sound = new Audio(filename);
 
-		let muted = false;
 		return {
 			mute: function() {
-				muted = true;
 				sound.volume = 0;
 
 				return this;
 			},
 
 			unmute: function() {
-				muted = false;
 				sound.volume = volume;
 
 				return this;
@@ -1470,6 +1467,7 @@ function loadApp() {
 		return [createText("Vibrar al Barajear:"), toggleBtn];
 	})()));
 
+	// Reset all other settings to their default values
 	menuContainer.appendChild(menuOption((function() {
 		let resetTimer = 0;
 		let resetting = false;
