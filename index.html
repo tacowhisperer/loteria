@@ -1493,6 +1493,30 @@ function loadApp() {
 	)));
 
 	// History size
+	menuContainer.appendChild(menuOption((function() {
+		const input = document.createElement("input");
+		input.type = "number";
+		input.value = menuSettings.getHistorySize();
+		input.min = 0;
+
+		const setter = () => {
+			menuSettings.setHistorySize(input.value);
+			historySize = input.value;
+
+			populateHistory();
+		};
+
+		input.addEventListener("input", setter);
+
+		resetters.push(() => {
+			input.value = menuSettings.getDefaultHistorySize();
+			setter();
+		});
+
+		return [createText("Tamaño del Historial:"), input];
+	})()));
+
+	// Fade history out on new baraja
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		"Fade Out al Historial",
 		"FadeHistory",
