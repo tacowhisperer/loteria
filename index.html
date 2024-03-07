@@ -367,7 +367,7 @@
 		#menu_ribbon {
 			display: flex;
 			position: fixed;
-			background-color: rgba(0, 0, 0, 0.65);
+			background-color: rgba(0, 0, 0, 0.75);
 			color: #eee;
 			font-family: 'Protest Riot', sans-serif;
 			font-size: min(5.5vw, 5.5vh);
@@ -447,7 +447,7 @@
 			aspect-ratio: 5 / 4;
 			color: #eee;
 			display: block;
-			background-color: rgba(0, 0, 0, 0.55);
+			background-color: rgba(0, 0, 0, 1.0);
 			border: none;
 			border-radius: 1rem;
 			font-family: 'Protest Riot', sans-serif;
@@ -723,11 +723,36 @@ function loadApp() {
 	// The number of previous cards to show on the side
 	let historySize = 5;
 
+	// Whether to fade out the history or not
+	let fadeHistory = true;
+
 	// The amount of time to linger on the ¡BUENAS! screen
 	const buenasTime = 2700;
 
 	// Index of the current card to show on the big carta container
 	let gameIndex = 0;
+
+	// Whether or not the speech synthesizer should announce the baraja
+	let announceBaraja = true;
+
+	// Speech synthesizer (if supported)
+	const synth = 'speechSynthesis' in window ? (() => {
+		const s = new SpeechSynthesisUtterance();
+		s.lang = 'es-US';
+
+		return {
+			stop: () => window.speechSynthesis.cancel(),
+			play: msg => {
+				if (announceBaraja) {
+					s.text = msg;
+					window.speechSynthesis.speak(s);
+				}
+			}
+		};
+	})() : {
+		stop: () => {},
+		play: msg => console.log(`Speech synthesizer not supported!`)
+	};
 
 	const NAME = 0;
 	const X_Y = 1;
@@ -857,7 +882,12 @@ function loadApp() {
 			cartaHistoryDOMArr.forEach((e, i) => {
 				e.style.zIndex = historySize - i + 1;
 				e.style.top = `${(i * (wH - cH) / (l - 1))}px`;
-				e.style.opacity = (l - i) / l;
+
+				if (fadeHistory) {
+					e.style.opacity = (l - i) / l;
+				} else {
+					e.style.opacity = 1;
+				}
 			});
 		}
 	};
@@ -882,11 +912,15 @@ function loadApp() {
 		const HISTORY_SIZE = "historySize";
 		const SOUND_EFF = "soundEffects";
 		const VIBRATE = "vibration";
+		const ANNOUNCE_SETTING = "announcement";
+		const FADE_HIST = "fadeHistory"
 
-		const DEFAULT_BARAJA_TIME = 6; // seconds
+		const DEFAULT_BARAJA_TIME = 5.5; // seconds
 		const DEFAULT_HISTORY_SIZE = 5; // baraja
 		const DEFAULT_SOUND_SETTING = true; // sound effects enabled
 		const DEFAULT_VIBRATE_SETTING = true; // vibration on new card is enabled
+		const DEFAULT_ANNOUNCEMENT_SETTING = true; // synth announcement of card on flip
+		const DEFAULT_FADEHIST_SETTING = true; // fade history as it's pushed out
 
 		return {
 			set: function(key, item) {
@@ -915,6 +949,14 @@ function loadApp() {
 				return this.set(VIBRATE, bool);
 			},
 
+			setAnnouncementSetting: function(bool) {
+				return this.set(ANNOUNCE_SETTING, bool);
+			},
+
+			setFadeHistorySetting: function(bool) {
+				return this.set(FADE_HIST, bool);
+			},
+
 			getBarajaTime: function() {
 				return this.get(BARAJA_TIME) || DEFAULT_BARAJA_TIME;
 			},
@@ -931,6 +973,14 @@ function loadApp() {
 				return this.get(VIBRATE) || DEFAULT_VIBRATE_SETTING;
 			},
 
+			getAnnouncementSetting: function () {
+				return this.get(ANNOUNCE_SETTING) || DEFAULT_ANNOUNCEMENT_SETTING;
+			},
+
+			getFadeHistorySetting: function() {
+				return this.get(FADE_HIST) || DEFAULT_FADEHIST_SETTING;
+			},
+
 			getDefaultBarajaTime: function() {
 				return DEFAULT_BARAJA_TIME;
 			},
@@ -945,6 +995,14 @@ function loadApp() {
 			
 			getDefaultVibrationSetting: function() {
 				return DEFAULT_VIBRATE_SETTING;
+			},
+
+			getDefaultAnnouncementSetting: function() {
+				return DEFAULT_ANNOUNCEMENT_SETTING;
+			},
+
+			getDefaultFadeHistorySetting: function() {
+				return DEFAULT_FADEHIST_SETTING;
 			}
 		}
 	}
@@ -1083,7 +1141,7 @@ function loadApp() {
 		}
 	}
 
-	function showNextCard(gameDeck, cardDOMElement, synthesizer, historyQueue) {
+	function showNextCard(gameDeck, cardDOMElement, historyQueue) {
 		if (gameIndex < gameDeck.length) {
 			console.log(`#${gameIndex + 1}: ${gameDeck[gameIndex][NAME]}`);
 
@@ -1125,8 +1183,8 @@ function loadApp() {
 					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
-					synthesizer.stop();
-					synthesizer.play(gameDeck[gameIndex][NAME]);
+					synth.stop();
+					synth.play(gameDeck[gameIndex][NAME]);
 
 					gameIndex++;
 
@@ -1148,19 +1206,6 @@ function loadApp() {
 
 		shuffleDeck(gameDeck);
 
-		const synth = 'speechSynthesis' in window ? (() => {
-			const s = new SpeechSynthesisUtterance();
-			s.lang = 'es-US';
-
-			return {
-				stop: () => window.speechSynthesis.cancel(),
-				play: msg => {s.text = msg; window.speechSynthesis.speak(s);}
-			};
-		})() : {
-			stop: () => {},
-			play: msg => console.log(`Speech synthesizer not supported!`)
-		};
-
 		// Initialize the queue that will keep track of previously shown cards
 		const historyQueue = new Queue(cardHistoryDOMArray.length, queue => {
 			for (let i = 0; i < queue.length; i++) {
@@ -1177,12 +1222,12 @@ function loadApp() {
 
 		// Starting!
 		synth.play('¡Corre y se va corriendo, CON!');
-		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, synth, historyQueue);
+		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue);
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
 			document.getElementById("spacer").classList.toggle("playing");
-			showNextCard(gameDeck, cardDOMElement, synth, historyQueue);
+			showNextCard(gameDeck, cardDOMElement, historyQueue);
 			gameLoop.run();
 		}, 3800);
 
@@ -1332,6 +1377,13 @@ function loadApp() {
 		menuOverlay.classList.toggle("engaged");
 	});
 
+	// Make the overlay disengage the menu if it's accessible
+	menuOverlay.addEventListener(activator, () => {
+		menu.classList.remove("change");
+		menuRibbon.classList.remove("engaged");
+		menuOverlay.classList.remove("engaged");
+	});
+
 	// Add the different menu functionalities
 	const menuSettings = settingsStorage();
 
@@ -1361,7 +1413,36 @@ function loadApp() {
 		toggleBtn.appendChild(toggleTrack);
 
 		return [input, toggleBtn];
-	}
+	};
+
+	const createToggleSetting = function(text, op, varSet, onSet) {
+		const [input, toggleBtn] = createToggleSwitch();
+		const [menuGet, menuSet, menuDefaultGet] = [`get${op}Setting`, `set${op}Setting`, `getDefault${op}Setting`];
+		input.checked = menuSettings[menuGet]();
+
+		// Restore the previous session's setting
+		varSet(input);
+
+		const setter = () => {
+			input.checked = !input.checked;
+			menuSettings[menuSet](input.checked);
+
+			varSet(input);
+		};
+
+		// Activation of the toggle slider
+		toggleBtn.addEventListener(activator, () => {
+			setter();
+			onSet();
+		});
+
+		resetters.push(() => {
+			input.checked = !menuSettings[menuDefaultGet](); // setter flips this from expected value
+			setter();
+		});
+
+		return [createText(`${text}:`), toggleBtn];
+	};
 
 	// Access array for the menu reset button
 	const resetters = [];
@@ -1387,92 +1468,44 @@ function loadApp() {
 		return [createText("Segundos por Baraja:"), input];
 	})()));
 
-	// History size
-	menuContainer.appendChild(menuOption((function() {
-		const input = document.createElement("input");
-		input.type = "number";
-		input.value = menuSettings.getHistorySize();
-		input.min = 0;
-
-		const setter = () => {
-			menuSettings.setHistorySize(input.value);
-			historySize = input.value;
-
-			populateHistory();
-		};
-
-		input.addEventListener("input", setter);
-
-		resetters.push(() => {
-			input.value = menuSettings.getDefaultHistorySize();
-			setter();
-		});
-
-		return [createText("Tamaño del Historial:"), input];
-	})()));
-
 	// Play sound effects or not
-	menuContainer.appendChild(menuOption((function() {
-		const [input, toggleBtn] = createToggleSwitch();
-		input.checked = menuSettings.getSoundEffectSetting();
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		"Efectos de Sonido",
+		"SoundEffect",
+		input => audioUI.forEach(a => input.checked ? a.unmute() : a.mute()),
+		() => clickAudio.play()
+	)));
 
-		// Restore the previous sessions sound setting
-		audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
-
-		const setter = () => {
-			input.checked = !input.checked;
-			menuSettings.setSoundEffectSetting(input.checked);
-
-			audioUI.forEach(a => input.checked ? a.unmute() : a.mute());
-		};
-
-		// Activation of the toggle slider
-		toggleBtn.addEventListener(activator, () => {
-			setter();
-			clickAudio.play();
-		});
-
-		resetters.push(() => {
-			input.checked = !menuSettings.getDefaultSoundEffectSetting(); // setter flips this from expected value
-			setter();
-		});
-
-		return [createText("Efectos de Sonido:"), toggleBtn];
-	})()));
+	// Announce a new baraja or not
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		"Anunciar Baraja",
+		"Announcement",
+		input => announceBaraja = input.checked,
+		() => synth.play("Ámonos")
+	)));
 
 	// Vibrate phone on new card or not
-	menuContainer.appendChild(menuOption((function() {
-		const [input, toggleBtn] = createToggleSwitch();
-		input.checked = menuSettings.getVibrationSetting();
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		"Vibrar al Barajear",
+		"Vibration",
+		input => vibrate = input.checked,
+		() => flipPulse()
+	)));
 
-		vibrate = input.checked;
-
-		const setter = () => {
-			input.checked = !input.checked;
-			menuSettings.setVibrationSetting(input.checked);
-
-			vibrate = input.checked;
-		};
-
-		toggleBtn.addEventListener(activator, () => {
-			setter();
-			flipPulse();
-		});
-
-		resetters.push(() => {
-			input.checked = !menuSettings.getDefaultVibrationSetting(); // setter flips this from expected value
-			setter();
-		});
-
-		return [createText("Vibrar al Barajear:"), toggleBtn];
-	})()));
+	// History size
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		"Fade Out al Historial",
+		"FadeHistory",
+		input => fadeHistory = input.checked,
+		() => console.log(`Fade History: ${fadeHistory}`)
+	)));
 
 	// Reset all other settings to their default values
 	menuContainer.appendChild(menuOption((function() {
 		let resetTimer = 0;
 		let resetting = false;
 
-		const defaultStr = `❌(3)`;
+		const defaultStr = `❌ (3)`;
 
 		const btn = document.createElement("div");
 		btn.classList.add("panic-button");
@@ -1488,7 +1521,7 @@ function loadApp() {
 
 		btn.addEventListener(activator, () => {
 			const btnText = btn.children[0].innerText;
-			const btnNum = btnText.substring(2, btnText.length - 1);
+			const btnNum = btnText.substring(3, btnText.length - 1);
 
 			if (btnNum.match(/^\d+$/)) {
 				clearTimeout(resetTimer);
@@ -1501,7 +1534,7 @@ function loadApp() {
 
 					resetTimer = setTimeout(resetBtn, 7000);
 				} else {
-					btn.children[0].innerText = `❌(${count})`;
+					btn.children[0].innerText = `❌ (${count})`;
 
 					resetTimer = setTimeout(resetBtn, 3000);
 				}
