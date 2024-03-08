@@ -168,7 +168,11 @@
 			opacity: 1;
 			text-shadow: 0.6vh 0.6vh 0 #333, 0.6vh -0.6vh 0 #333, -0.6vh 0.6vh 0 #333, -0.6vh -0.6vh 0 #333, 0.8485vh 0 0 #333, -0.8485vh 0 0 #333, 0 0.8485vh 0 #333, 0 -0.8485vh 0 #333, 0.7839vh 0.3247vh 0 #333, -0.7839vh 0.3247vh 0 #333, 0.7839vh -0.3247vh 0 #333, -0.7839vh -0.3247vh 0 #333, 0.3247vh 0.7839vh 0 #333, -0.3247vh 0.7839vh 0 #333, 0.3247vh -0.7839vh 0 #333, -0.3247vh -0.7839vh 0 #333;
 			transform: rotate(-12deg);
-			transition: opacity 0.1s ease, translate 0.1s ease;
+			transition: 0.1s ease;
+		}
+
+		#state_text.explode {
+			transform: scale(5);
 		}
 
 		#carta.clicked {
@@ -848,7 +852,12 @@ function loadApp() {
 
 			// If the timer was reset, then this next value must be 0
 			if (Number.isFinite(lastTickTime)) {
-				deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
+				const delta = Date.now() - lastTickTime;
+
+				// Don't continue the timer once the dispTime ms have elapsed
+				if (delta <= dispTime) {
+					deg *= ((Date.now() - lastTickTime) % dispTime) / dispTime;
+				}
 			} else {
 				deg = 0;
 				lastTickTime = Date.now();
@@ -983,7 +992,7 @@ function loadApp() {
 		}
 	}
 
-	function engine(fn, time, pulseCheck = () => true, ...args) {
+	function engine(fn, time, ...args) {
 		let engineID = -1;
 
 		let usingAnimationFrames = false;
@@ -999,9 +1008,7 @@ function loadApp() {
 					startTime = Date.now();
 				}
 
-				if (pulseCheck()) {
-					engineID = requestAnimationFrame(engineLoop);
-				}
+				engineID = requestAnimationFrame(engineLoop);
 			}
 		}
 
@@ -1010,12 +1017,7 @@ function loadApp() {
 			run: function() {
 				if (!this.isRunning()) {
 					if (!usingAnimationFrames) {
-						if (pulseCheck()) {
-							engineID = setInterval(fn, currentInterval, ...args);
-						} else {
-							engineID = 1;
-							this.step();
-						}
+						engineID = setInterval(fn, currentInterval, ...args);
 					}
 
 					else {
@@ -1144,6 +1146,12 @@ function loadApp() {
 	}
 
 	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
+		stateText.innerText = "¡Corre!";
+		setTimeout(() => {
+			stateText.classList.add("explode");
+			stateText.style.opacity = 0;
+		}, 400);
+
 		menu.classList.remove("inactive");
 		bg.classList.remove("inactive");
 
@@ -1165,10 +1173,12 @@ function loadApp() {
 
 		// Starting!
 		synth.play('¡Corre y se va corriendo, CON!');
-		const gameLoop = engine(showNextCard, displayCardTime, () => autoFlip, gameDeck, cardDOMElement, historyQueue);
+		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue);
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
+			stateText.classList.remove("explode");
+
 			document.getElementById("spacer").classList.toggle("playing");
 			showNextCard(gameDeck, cardDOMElement, historyQueue);
 			gameLoop.run();
@@ -1215,7 +1225,6 @@ function loadApp() {
 			// The game has not started yet, so the carta is a play button that initializes the game
 			} else {
 				// This is the first time that the game is executed after initial load or reset
-				stateText.style.opacity = 0;
 				game = play(loteria, carta, cartaHistoryDOMArr, dispTime);
 			}
 
