@@ -1520,14 +1520,14 @@ function loadApp() {
 				if (!resetting) {
 					clearTimeout(resetTimer);
 
+					localStorage.clear();
 					resetters.forEach(r => r());
 					resetting = true;
 
-					clickAudio.play();
 					btn.style.backgroundColor = '#046a6a';
 					btn.children[0].innerText = "✔️";
-
-					localStorage.clear();
+					clickAudio.play();
+					flipPulse();
 
 					setTimeout(() => {
 						resetBtn();
