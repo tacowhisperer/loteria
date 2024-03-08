@@ -601,6 +601,9 @@ const loadLoop = setInterval(() => {
 }, 25);
 
 function loadApp() {
+	// App settings
+	const menuSettings = settingsStorage();
+
 	// Baraja theme colors
 	const YELLOW = '220, 180, 10';
 	const LIGHT_YELLOW = '250, 220, 100';
@@ -714,30 +717,30 @@ function loadApp() {
 	// All special sound effects
 	const audioUI = [clickAudio, buenasAudio, flipAudio, shuffleAudio];
 
-	// Tactile cue for flipping the card
-	let vibrate = true;
-	const flipPulse = () => vibrate ? window.navigator.vibrate([60]) : null;
-
-	// The amount of time to show each card
-	let dispTime = 4000;
-
-	// The number of previous cards to show on the side
-	let historySize = 5;
-
-	// Whether to fade out the history or not
-	let fadeHistory = true;
-
 	// The amount of time to linger on the ¡BUENAS! screen
 	const buenasTime = 2700;
 
 	// Index of the current card to show on the big carta container
 	let gameIndex = 0;
 
+	// Tactile cue for flipping the card
+	let vibrate = menuSettings.getVibrationSetting();
+	const flipPulse = () => vibrate ? window.navigator.vibrate([60]) : null;
+
+	// The amount of time to show each card
+	let dispTime = 1000 * menuSettings.getBarajaTimeSetting();
+
+	// The number of previous cards to show on the side
+	let historySize = menuSettings.getHistorySizeSetting();
+
+	// Whether to fade out the history or not
+	let fadeHistory = menuSettings.getFadeHistorySetting();
+
 	// Whether or not the speech synthesizer should announce the baraja
-	let announceBaraja = true;
+	let announceBaraja = menuSettings.getAnnouncementSetting();
 
 	// Whether the game should show the next card or it should be done manually
-	let autoFlip = true;
+	let autoFlip = menuSettings.getAutoFlipModeSetting();
 
 	// Speech synthesizer (if supported)
 	const synth = 'speechSynthesis' in window ? (() => {
@@ -912,103 +915,32 @@ function loadApp() {
 	populateHistory();
 
 	function settingsStorage() {
-		const BARAJA_TIME = "barajaTime";
-		const HISTORY_SIZE = "historySize";
-		const SOUND_EFF = "soundEffects";
-		const VIBRATE = "vibration";
-		const ANNOUNCE_SETTING = "announcement";
-		const FADE_HIST = "fadeHistory"
+		const settings = {
+			"BarajaTime":	5.5,	// seconds per display of baraja
+			"SoundEffect":	true,	// sfx sounds
+			"Announcement":	true,	// synthesizer speech
+			"Vibration":	true,	// device vibration on baraja flip
+			"HistorySize":	5,		// cards of history remain on display
+			"FadeHistory":	true,	// fade baraja out as they show
+			"AutoFlipMode":	true	// auto-flip to next baraja
+		};
 
-		const DEFAULT_BARAJA_TIME = 5.5; // seconds
-		const DEFAULT_HISTORY_SIZE = 5; // baraja
-		const DEFAULT_SOUND_SETTING = true; // sound effects enabled
-		const DEFAULT_VIBRATE_SETTING = true; // vibration on new card is enabled
-		const DEFAULT_ANNOUNCEMENT_SETTING = true; // synth announcement of card on flip
-		const DEFAULT_FADEHIST_SETTING = true; // fade history as it's pushed out
+		const get = key => {
+			const val = localStorage.getItem(key);
+			return typeof val !== 'string' ? val : JSON.parse(val);
+		};
 
-		return {
-			set: function(key, item) {
-				localStorage.setItem(key, JSON.stringify(item));
-				return this;
-			},
+		const set = (key, value) => {
+			localStorage.setItem(key, JSON.stringify(value));
+		};
 
-			get: function(key) {
-				const val = localStorage.getItem(key);
-				return typeof val !== 'string' ? val : JSON.parse(val);
-			},
-
-			setBarajaTime: function(time) {
-				return this.set(BARAJA_TIME, time);
-			},
-
-			setHistorySize: function(size) {
-				return this.set(HISTORY_SIZE, size);
-			},
-
-			setSoundEffectSetting: function(bool) {
-				return this.set(SOUND_EFF, bool);
-			},
-
-			setVibrationSetting: function(bool) {
-				return this.set(VIBRATE, bool);
-			},
-
-			setAnnouncementSetting: function(bool) {
-				return this.set(ANNOUNCE_SETTING, bool);
-			},
-
-			setFadeHistorySetting: function(bool) {
-				return this.set(FADE_HIST, bool);
-			},
-
-			getBarajaTime: function() {
-				return this.get(BARAJA_TIME) || DEFAULT_BARAJA_TIME;
-			},
-
-			getHistorySize: function() {
-				return this.get(HISTORY_SIZE) || DEFAULT_HISTORY_SIZE;
-			},
-
-			getSoundEffectSetting: function() {
-				return this.get(SOUND_EFF) || DEFAULT_SOUND_SETTING;
-			},
-
-			getVibrationSetting: function() {
-				return this.get(VIBRATE) || DEFAULT_VIBRATE_SETTING;
-			},
-
-			getAnnouncementSetting: function () {
-				return this.get(ANNOUNCE_SETTING) || DEFAULT_ANNOUNCEMENT_SETTING;
-			},
-
-			getFadeHistorySetting: function() {
-				return this.get(FADE_HIST) || DEFAULT_FADEHIST_SETTING;
-			},
-
-			getDefaultBarajaTime: function() {
-				return DEFAULT_BARAJA_TIME;
-			},
-
-			getDefaultHistorySize: function() {
-				return DEFAULT_HISTORY_SIZE;
-			},
-
-			getDefaultSoundEffectSetting: function() {
-				return DEFAULT_SOUND_SETTING;
-			},
-			
-			getDefaultVibrationSetting: function() {
-				return DEFAULT_VIBRATE_SETTING;
-			},
-
-			getDefaultAnnouncementSetting: function() {
-				return DEFAULT_ANNOUNCEMENT_SETTING;
-			},
-
-			getDefaultFadeHistorySetting: function() {
-				return DEFAULT_FADEHIST_SETTING;
-			}
-		}
+		const getterSetter = {};
+		Object.keys(settings).forEach(s => {
+			getterSetter[`get${s}Setting`] = () => {const v = get(s); return v === null ? settings[s] : v;};
+			getterSetter[`set${s}Setting`] = value => set(s, value);
+			getterSetter[`getDefault${s}Setting`] = () => settings[s];
+		});
+		return getterSetter;
 	}
 
 	function iTo2D(i, m, n) {
@@ -1395,8 +1327,8 @@ function loadApp() {
 		menuOverlay.classList.remove("engaged");
 	});
 
-	// Add the different menu functionalities
-	const menuSettings = settingsStorage();
+	// Access array for the menu reset button
+	const resetters = [];
 
 	const createText = function(text) {
 		const p = document.createElement("p");
@@ -1431,9 +1363,6 @@ function loadApp() {
 		const [menuGet, menuSet, menuDefaultGet] = [`get${op}Setting`, `set${op}Setting`, `getDefault${op}Setting`];
 		input.checked = menuSettings[menuGet]();
 
-		// Restore the previous session's setting
-		varSet(input);
-
 		const setter = () => {
 			input.checked = !input.checked;
 			menuSettings[menuSet](input.checked);
@@ -1454,31 +1383,35 @@ function loadApp() {
 
 		return [createText(`${text}:`), toggleBtn];
 	};
-
-	// Access array for the menu reset button
-	const resetters = [];
-
+	
 	// Seconds per baraja
 	menuContainer.appendChild(menuOption((function() {
 		const input = document.createElement("input");
 		input.type = "number";
-		input.value = menuSettings.getBarajaTime();
+		input.value = dispTime / 1000;
 
 		const setter = () => {
-			menuSettings.setBarajaTime(input.value);
+			menuSettings.setBarajaTimeSetting(input.value);
 			dispTime = input.value * 1000;
 		};
-		setter();
 
 		input.addEventListener("input", setter);
 
 		resetters.push(() => {
-			input.value = menuSettings.getDefaultBarajaTime();
+			input.value = menuSettings.getDefaultBarajaTimeSetting();
 			setter();
 		});
 
 		return [createText("Segundos por Baraja:"), input];
 	})()));
+
+	// // Let the game flip to the next card automatically or not
+	// menuContainer.appendChild(menuOption(createToggleSetting(
+	// 	"Auto Barajear",
+	// 	"AutoFlipMode",
+	// 	input => autoFlip = input.checked,
+	// 	() => clickAudio.play()
+	// )));
 
 	// Play sound effects or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
@@ -1493,7 +1426,7 @@ function loadApp() {
 		"Anunciar Baraja",
 		"Announcement",
 		input => announceBaraja = input.checked,
-		() => synth.play("Ámonos")
+		() => {clickAudio.play(); synth.play("Ámonos");}
 	)));
 
 	// Vibrate phone on new card or not
@@ -1501,28 +1434,27 @@ function loadApp() {
 		"Vibrar al Barajear",
 		"Vibration",
 		input => vibrate = input.checked,
-		() => flipPulse()
+		() => {clickAudio.play(); flipPulse();}
 	)));
 
 	// History size
 	menuContainer.appendChild(menuOption((function() {
 		const input = document.createElement("input");
 		input.type = "number";
-		input.value = menuSettings.getHistorySize();
+		input.value = historySize;
 		input.min = 0;
 
 		const setter = () => {
-			menuSettings.setHistorySize(input.value);
+			menuSettings.setHistorySizeSetting(input.value);
 			historySize = input.value;
 
 			populateHistory();
 		};
-		setter();
 
 		input.addEventListener("input", setter);
 
 		resetters.push(() => {
-			input.value = menuSettings.getDefaultHistorySize();
+			input.value = menuSettings.getDefaultHistorySizeSetting();
 			setter();
 		});
 
@@ -1534,7 +1466,7 @@ function loadApp() {
 		"Fade Out al Historial",
 		"FadeHistory",
 		input => fadeHistory = input.checked,
-		() => console.log(`Fade History: ${fadeHistory}`)
+		() => clickAudio.play()
 	)));
 
 	// Reset all other settings to their default values
@@ -1582,8 +1514,11 @@ function loadApp() {
 					resetters.forEach(r => r());
 					resetting = true;
 
+					clickAudio.play();
 					btn.style.backgroundColor = '#046a6a';
 					btn.children[0].innerText = "✔️";
+
+					localStorage.clear();
 
 					setTimeout(() => {
 						resetBtn();
