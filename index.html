@@ -172,7 +172,7 @@
 		}
 
 		#state_text.explode {
-			transform: scale(5);
+			transform: scale(2);
 		}
 
 		#carta.clicked {
@@ -752,10 +752,15 @@ function loadApp() {
 		s.lang = 'es-US';
 
 		return {
-			stop: () => window.speechSynthesis.cancel(),
-			play: msg => {
+			stop: function() {
+				window.speechSynthesis.cancel();
+			},
+
+			play: function(msg) {
 				if (announceBaraja) {
 					s.text = msg;
+
+					this.stop();
 					window.speechSynthesis.speak(s);
 				}
 			}
@@ -998,9 +1003,11 @@ function loadApp() {
 		let usingAnimationFrames = false;
 		let startTime = -1;
 
+		let autoLoop = true;
+
 		// If using requestAnimationFrame, interval can be dynamically changed between frame calls
 		let currentInterval = time;
-		const engineLoop = () => {
+		const setAnimationLoop = () => {
 			if (startTime > 0) {
 				// The minimum amount of time has elapsed to call the function again
 				if ((Date.now() - startTime) >= currentInterval) {
@@ -1008,27 +1015,35 @@ function loadApp() {
 					startTime = Date.now();
 				}
 
-				engineID = requestAnimationFrame(engineLoop);
+				engineID = requestAnimationFrame(setAnimationLoop);
 			}
 		}
 
 		return {
 			// Simple start
 			run: function() {
-				if (!this.isRunning()) {
+				if (!this.isRunning() && autoLoop) {
 					if (!usingAnimationFrames) {
 						engineID = setInterval(fn, currentInterval, ...args);
 					}
 
 					else {
 						startTime = Date.now();
-						engineLoop();
+						setAnimationLoop();
 					}
 				}
+
+				// run called on manual mode, so enable the engine but don't activate an automatic loop
+				else if (!autoLoop) {
+					engineID = 1;
+					startTime = 1;
+				}
+
+				return this;
 			},
 
 			// Return to a state of 0 and not -1 to differentiate between never executed and paused
-			stop: () => {
+			stop: function() {
 				if (!usingAnimationFrames) {
 					clearInterval(engineID);
 					engineID = 0;
@@ -1038,10 +1053,12 @@ function loadApp() {
 					cancelAnimationFrame(engineID);
 					startTime = 0;
 				}
+
+				return this;
 			},
 
-			// Is only ever positive when it has been set by the setInterval or requestAnimationFrame functions
-			isRunning: () => {
+			isRunning: function() {
+				// Values are only ever true when they have been set by the run method
 				if (!usingAnimationFrames) {
 					return engineID > 0;
 				}
@@ -1050,7 +1067,7 @@ function loadApp() {
 			},
 
 			// Will only ever be true if the engine has executed the "run" state at least once
-			isPaused: () => {
+			isPaused: function() {
 				if (!usingAnimationFrames) {
 					return engineID > -1;
 				}
@@ -1059,7 +1076,10 @@ function loadApp() {
 			},
 
 			// Manual call to the next loop
-			step: () => fn(...args),
+			step: function() {
+				fn(...args);
+				return this;
+			},
 
 			// Use animationframe instead of setinterval to power the engine
 			useAnimationFrames: function() {
@@ -1071,6 +1091,22 @@ function loadApp() {
 			updateInterval: function(newInterval) {
 				currentInterval = newInterval;
 				return this;
+			},
+
+			// Set the engine to fire only on call instead of in an interval
+			manualFire: function() {
+				autoLoop = false;
+				return this;
+			},
+
+			// Set the engine to fire automatically
+			autoFire: function() {
+				autoLoop = true;
+				return this;
+			},
+
+			setFire: function(automaticMode) {
+				return automaticMode ? this.autoFire() : this.manualFire();
 			}
 		};
 	}
@@ -1128,7 +1164,6 @@ function loadApp() {
 					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
-					synth.stop();
 					synth.play(gameDeck[gameIndex][NAME]);
 
 					gameIndex++;
@@ -1150,7 +1185,7 @@ function loadApp() {
 		setTimeout(() => {
 			stateText.classList.add("explode");
 			stateText.style.opacity = 0;
-		}, 400);
+		}, 750);
 
 		menu.classList.remove("inactive");
 		bg.classList.remove("inactive");
@@ -1173,7 +1208,7 @@ function loadApp() {
 
 		// Starting!
 		synth.play('¡Corre y se va corriendo, CON!');
-		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue);
+		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue).setFire(autoFlip);
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
@@ -1392,6 +1427,14 @@ function loadApp() {
 
 		return [createText(`${text}:`), toggleBtn];
 	};
+
+	// Let the game flip to the next card automatically or not
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		"Auto Barajear",
+		"AutoFlipMode",
+		input => autoFlip = input.checked,
+		() => clickAudio.play()
+	)));
 	
 	// Seconds per baraja
 	menuContainer.appendChild(menuOption((function() {
@@ -1413,14 +1456,6 @@ function loadApp() {
 
 		return [createText("Segundos por Baraja:"), input];
 	})()));
-
-	// // Let the game flip to the next card automatically or not
-	// menuContainer.appendChild(menuOption(createToggleSetting(
-	// 	"Auto Barajear",
-	// 	"AutoFlipMode",
-	// 	input => autoFlip = input.checked,
-	// 	() => clickAudio.play()
-	// )));
 
 	// Play sound effects or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
