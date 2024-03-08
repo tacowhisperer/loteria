@@ -504,6 +504,7 @@
 			display: flex;
 			justify-content: center;
 			align-items: center;
+			white-space: nowrap;
 
 			color: #eee;
 			cursor: pointer;
@@ -734,6 +735,9 @@ function loadApp() {
 
 	// Whether or not the speech synthesizer should announce the baraja
 	let announceBaraja = true;
+
+	// Whether the game should show the next card or it should be done manually
+	let autoFlip = true;
 
 	// Speech synthesizer (if supported)
 	const synth = 'speechSynthesis' in window ? (() => {
@@ -1047,7 +1051,7 @@ function loadApp() {
 		}
 	}
 
-	function engine(fn, time, ...args) {
+	function engine(fn, time, pulseCheck = () => true, ...args) {
 		let engineID = -1;
 
 		let usingAnimationFrames = false;
@@ -1062,8 +1066,10 @@ function loadApp() {
 					fn(...args);
 					startTime = Date.now();
 				}
-				
-				engineID = requestAnimationFrame(engineLoop);
+
+				if (pulseCheck()) {
+					engineID = requestAnimationFrame(engineLoop);
+				}
 			}
 		}
 
@@ -1072,7 +1078,12 @@ function loadApp() {
 			run: function() {
 				if (!this.isRunning()) {
 					if (!usingAnimationFrames) {
-						engineID = setInterval(fn, currentInterval, ...args);
+						if (pulseCheck()) {
+							engineID = setInterval(fn, currentInterval, ...args);
+						} else {
+							engineID = 1;
+							this.step();
+						}
 					}
 
 					else {
@@ -1222,7 +1233,7 @@ function loadApp() {
 
 		// Starting!
 		synth.play('¡Corre y se va corriendo, CON!');
-		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue);
+		const gameLoop = engine(showNextCard, displayCardTime, () => autoFlip, gameDeck, cardDOMElement, historyQueue);
 
 		// Give the starting message enough time to finish
 		setTimeout(() => {
