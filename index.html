@@ -403,7 +403,7 @@
 		}
 
 		#menu_container li:last-child {
-			padding-bottom: 3vh;
+			padding-bottom: 3.5vh;
 		}
 
 		.menu_option {
@@ -416,8 +416,8 @@
 		}
 
 		.menu_option + .menu_option {
-			margin-top: 3vh;
-			padding-top: 3vh;
+			margin-top: 3.5vh;
+			padding-top: 3.5vh;
 			border-top: 0.15rem solid;
 			border-image: linear-gradient(to right, #d80b77, transparent) 1 0 0 0;
 		}
@@ -470,7 +470,6 @@
 		}
 
 		select {
-			aspect-ratio: 5 / 2;
 			color: #eee;
 			display: block;
 			background-color: black;
@@ -478,7 +477,7 @@
 			border-radius: 1rem;
 			font-family: 'Protest Riot', sans-serif;
 			font-size: min(5vw, 5vh);
-			padding: 1rem;
+			padding: 0 3rem;
 			height: min(15vw, 15vh);
 			text-align: center;
 		}
@@ -748,8 +747,8 @@ function loadApp() {
 
 	// All supported languages
 	const languages = {
-		'es-US': 'Español (US)',
-		'en-US': 'English (US)'
+		'es-US': 'Español 🇺🇸',
+		'en-US': 'English 🇺🇸'
 	};
 
 	// The amount of time to linger on the ¡BUENAS! screen
@@ -1513,6 +1512,17 @@ function loadApp() {
 		() => clickAudio.play()
 	)));
 	
+	// Announce a new baraja or not
+	menuContainer.appendChild(menuOption(createToggleSetting(
+		{
+			'es-US': 'Anunciar Baraja:',
+			'en-US': 'Announce New Card:'
+		},
+		"Announcement",
+		input => announceBaraja = input.checked,
+		() => {clickAudio.play(); synth.play("Ámonos");}
+	)));
+
 	// Seconds per baraja
 	menuContainer.appendChild(menuOption((function() {
 		const validityMsgs = {
@@ -1562,17 +1572,6 @@ function loadApp() {
 		() => clickAudio.play()
 	)));
 
-	// Announce a new baraja or not
-	menuContainer.appendChild(menuOption(createToggleSetting(
-		{
-			'es-US': 'Anunciar Baraja:',
-			'en-US': 'Announce New Card:'
-		},
-		"Announcement",
-		input => announceBaraja = input.checked,
-		() => {clickAudio.play(); synth.play("Ámonos");}
-	)));
-
 	// Vibrate phone on new card or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
@@ -1586,19 +1585,33 @@ function loadApp() {
 
 	// History size
 	menuContainer.appendChild(menuOption((function() {
+		const validityMsgs = {
+			'es-US': `Por favor utilizar valores numéricos enteros desde 0 hasta ${loteriaDeck.length}.`,
+			'en-US': `Please use whole numeric values from 0 to ${loteriaDeck.length}.`
+		};
+
 		const input = document.createElement("input");
 		input.type = "number";
 		input.value = historySize;
-		input.min = 0;
+		input.previousValue = input.value;
 
 		const setter = () => {
+			if (input.value === "" || !`${input.value}`.match(/\d*(\.\d+)?/) || input.value < 0 || input.value > loteriaDeck.length) {
+				input.value = input.previousValue;
+				input.setCustomValidity(validityMsgs[dispLang]);
+				input.reportValidity();
+			} else {
+				input.value = Math.floor(input.value);
+				input.previousValue = input.value;
+			}
+
 			menuSettings.setHistorySizeSetting(input.value);
 			historySize = input.value;
 
 			populateHistory();
 		};
 
-		input.addEventListener("input", setter);
+		input.addEventListener("blur", setter);
 
 		resetters.push(() => {
 			input.value = menuSettings.getDefaultHistorySizeSetting();
