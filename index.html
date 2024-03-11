@@ -1515,16 +1515,30 @@ function loadApp() {
 	
 	// Seconds per baraja
 	menuContainer.appendChild(menuOption((function() {
+		const validityMsgs = {
+			'es-US': 'Por favor utilizar valores numéricos mayores o iguales a 1.',
+			'en-US': 'Please use numeric values greater than or equal to 1.'
+		};
+
 		const input = document.createElement("input");
 		input.type = "number";
 		input.value = dispTime / 1000;
+		input.previousValue = input.value;
 
 		const setter = () => {
+			if (input.value === "" || !`${input.value}`.match(/\d*(\.\d+)?/) || input.value < 1) {
+				input.value = input.previousValue;
+				input.setCustomValidity(validityMsgs[dispLang]);
+				input.reportValidity();
+			} else {
+				input.previousValue = input.value;
+			}
+
 			menuSettings.setBarajaTimeSetting(input.value);
 			dispTime = input.value * 1000;
 		};
 
-		input.addEventListener("input", setter);
+		input.addEventListener("blur", setter);
 
 		resetters.push(() => {
 			input.value = menuSettings.getDefaultBarajaTimeSetting();
@@ -1679,7 +1693,7 @@ function loadApp() {
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
 	window.addEventListener("keydown", e => {
 		// Spacebar
-		if (e.key === ' ') {
+		if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
 			// Prevent the default spacebar behavior of scrolling the page
 			e.preventDefault();
 
