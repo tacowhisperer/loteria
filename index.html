@@ -569,7 +569,7 @@
 	<div id="menu_overlay" class="removed"></div>
 
 	<div id="carta" class="removed">
-		<p id="state_text">¡Ámonos!</p>
+		<p id="state_text"></p>
 		<p id="card_count"></p>
 	</div>
 
@@ -837,7 +837,7 @@ function loadApp() {
 	const stateText = document.getElementById("state_text");
 	const startText = {
 		'es-US': '¡Ámonos!',
-		'es-ES': '¡Ámonos!',
+		'es-ES': '¡Marcha!',
 		'en-US': 'Let\'s Go!'
 	};
 	const runningText = {
@@ -1567,7 +1567,7 @@ function loadApp() {
 		input => announceBaraja = input.checked,
 		() => {
 			clickAudio.play();
-			synth.play(({'es-US': "Ámonos", 'es-ES': "Ámonos", 'en-US': "Let's Go"})[dispLang]);
+			synth.play(({'es-US': "Ámonos", 'es-ES': "Marcha", 'en-US': "Let's Go"})[dispLang]);
 		}
 	)));
 
