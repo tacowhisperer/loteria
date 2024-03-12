@@ -747,7 +747,8 @@ function loadApp() {
 
 	// All supported languages
 	const languages = {
-		'es-US': 'Español 🇺🇸',
+		'es-US': 'Español 🇲🇽',
+		'es-ES': 'Español 🇪🇸',
 		'en-US': 'English 🇺🇸'
 	};
 
@@ -759,7 +760,7 @@ function loadApp() {
 
 	// Tactile cue for flipping the card
 	let vibrate = menuSettings.getVibrationSetting();
-	const flipPulse = () => vibrate ? window.navigator.vibrate([60]) : null;
+	const flipPulse = () => vibrate && ('vibrate' in window.navigator) ? window.navigator.vibrate([60]) : null;
 
 	// The display language of the app
 	let dispLang = menuSettings.getLanguageSetting();
@@ -782,9 +783,13 @@ function loadApp() {
 	// Speech synthesizer (if supported)
 	const synth = 'speechSynthesis' in window ? (() => {
 		const s = new SpeechSynthesisUtterance();
-		s.lang = 'es-US';
+		s.lang = dispLang;
 
 		return {
+			updateLang: function() {
+				s.lang = dispLang;
+			},
+
 			stop: function() {
 				window.speechSynthesis.cancel();
 			},
@@ -799,6 +804,7 @@ function loadApp() {
 			}
 		};
 	})() : {
+		updateLang: function() {},
 		stop: () => {},
 		play: msg => console.log(`Speech synthesizer not supported!`)
 	};
@@ -817,6 +823,22 @@ function loadApp() {
 
 	// DOM element that displays text to the user about the current game state
 	const stateText = document.getElementById("state_text");
+	const startText = {
+		'es-US': '¡Ámonos!',
+		'es-ES': '¡Ámonos!',
+		'en-US': 'Let\'s Go!'
+	};
+	const runningText = {
+		'es-US': '¡Corre!',
+		'es-ES': '¡Corre!',
+		'en-US': 'Runnin\'!'
+	};
+	const pauseText = {
+		'es-US': '¡Alto!',
+		'es-ES': '¡Alto!',
+		'en-US': 'Stop!'
+	};
+	stateText.innerText = startText[dispLang];
 
 	// DOM element that holds the previously shown cards
 	const cartaHistory = document.getElementById("history");
@@ -1215,7 +1237,7 @@ function loadApp() {
 	}
 
 	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
-		stateText.innerText = "¡Corre!";
+		stateText.innerText = runningText[dispLang];
 		setTimeout(() => {
 			stateText.classList.add("explode");
 			stateText.style.opacity = 0;
@@ -1241,7 +1263,15 @@ function loadApp() {
 		});
 
 		// Starting!
-		synth.play('¡Corre y se va corriendo, CON!');
+		synth.updateLang();
+
+		const startMsg = {
+			'es-US': '¡Corre y se va corriendo, CON!',
+			'es-ES': '¡Corre y se va corriendo, CON!',
+			'en-US': 'Run and it runs away, WITH!'
+		};
+
+		synth.play(startMsg[dispLang]);
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue).setFire(autoFlip);
 
 		// Give the starting message enough time to finish
@@ -1272,7 +1302,8 @@ function loadApp() {
 				if (game.isRunning()) {
 					next.classList.toggle("alto");
 					buenas.classList.toggle("alto");
-					stateText.innerText = '¡Alto!';
+
+					stateText.innerText = pauseText[dispLang];
 					stateText.style.opacity = 1;
 
 					timer.stop();
@@ -1329,7 +1360,7 @@ function loadApp() {
 				e.style.border = 'none';
 			});
 
-			stateText.innerText = `¡Ámonos!`;
+			stateText.innerText = startText[dispLang];
 			stateText.style.opacity = 1;
 
 			next.style.backgroundImage = `url(${nextImg.src})`;
@@ -1504,7 +1535,8 @@ function loadApp() {
 	// Let the game flip to the next card automatically or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
-			'es-US': 'Auto Barajear:',
+			'es-US': 'Auto Repartir:',
+			'es-ES': 'Auto Repartir',
 			'en-US': 'Auto Deal Cards:'
 		},
 		"AutoFlipMode",
@@ -1515,8 +1547,9 @@ function loadApp() {
 	// Announce a new baraja or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
-			'es-US': 'Anunciar Baraja:',
-			'en-US': 'Announce New Card:'
+			'es-US': 'Voz Anunciadora:',
+			'es-ES': 'Voz Anunciadora',
+			'en-US': 'Announcer Voice:'
 		},
 		"Announcement",
 		input => announceBaraja = input.checked,
@@ -1526,7 +1559,8 @@ function loadApp() {
 	// Seconds per baraja
 	menuContainer.appendChild(menuOption((function() {
 		const validityMsgs = {
-			'es-US': 'Por favor utilizar valores numéricos mayores o iguales a 1.',
+			'es-US': 'Por favor usar valores numéricos mayores o iguales a 1.',
+			'es-ES': 'Por favor usar valores numéricos mayores o iguales a 1.',
 			'en-US': 'Please use numeric values greater than or equal to 1.'
 		};
 
@@ -1556,7 +1590,8 @@ function loadApp() {
 		});
 
 		return [createMenuText({
-			'es-US': 'Segundos por Baraja:',
+			'es-US': 'Segundos por Carta:',
+			'es-ES': 'Segundos por Carta',
 			'en-US': 'Seconds per Card:'
 		}), input];
 	})()));
@@ -1565,6 +1600,7 @@ function loadApp() {
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
 			'es-US': 'Efectos de Sonido:',
+			'es-ES': 'Efectos Sonoros',
 			'en-US': 'Sound Effects:'
 		},
 		"SoundEffect",
@@ -1575,7 +1611,8 @@ function loadApp() {
 	// Vibrate phone on new card or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
-			'es-US': 'Vibrar al Barajear:',
+			'es-US': 'Vibrar con Carta Nueva:',
+			'es-ES': 'Vibrar con Carta Nueva:',
 			'en-US': 'Vibrate on Flip:'
 		},
 		"Vibration",
@@ -1586,7 +1623,8 @@ function loadApp() {
 	// History size
 	menuContainer.appendChild(menuOption((function() {
 		const validityMsgs = {
-			'es-US': `Por favor utilizar valores numéricos enteros desde 0 hasta ${loteriaDeck.length}.`,
+			'es-US': `Por favor usar valores numéricos enteros desde 0 hasta ${loteriaDeck.length}.`,
+			'es-ES': `Por favor usar valores numéricos enteros desde 0 hasta ${loteriaDeck.length}.`,
 			'en-US': `Please use whole numeric values from 0 to ${loteriaDeck.length}.`
 		};
 
@@ -1620,6 +1658,7 @@ function loadApp() {
 
 		return [createMenuText({
 			'es-US': 'Tamaño del Historial:',
+			'es-ES': 'Tamaño del Historial:',
 			'en-US': 'History Size:'
 		}), input];
 	})()));
@@ -1627,7 +1666,8 @@ function loadApp() {
 	// Fade history out on new baraja
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
-			'es-US': 'Desvanecer al Historial:',
+			'es-US': 'Desvanecer el Historial:',
+			'es-ES': 'Desvanecer el Historial:',
 			'en-US': 'Fade Out History:'
 		},
 		"FadeHistory",
@@ -1698,7 +1738,8 @@ function loadApp() {
 		});
 
 		return [createMenuText({
-			'es-US': 'Resetear Ajustes:',
+			'es-US': 'Resetear Todo Ajuste:',
+			'es-ES': 'Restablecer Todo Ajuste:',
 			'en-US': 'Reset All Settings:'
 		}), btn];
 	})()));
