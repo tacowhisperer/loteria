@@ -1608,17 +1608,19 @@ function loadApp() {
 		() => clickAudio.play()
 	)));
 
-	// Vibrate phone on new card or not
-	menuContainer.appendChild(menuOption(createToggleSetting(
-		{
-			'es-US': 'Vibrar con Carta Nueva:',
-			'es-ES': 'Vibrar con Carta Nueva:',
-			'en-US': 'Vibrate on Flip:'
-		},
-		"Vibration",
-		input => vibrate = input.checked,
-		() => {clickAudio.play(); flipPulse();}
-	)));
+	// Vibrate phone on new card or not, if available
+	if ('vibrate' in window.navigator) {
+		menuContainer.appendChild(menuOption(createToggleSetting(
+			{
+				'es-US': 'Vibrar con Carta Nueva:',
+				'es-ES': 'Vibrar con Carta Nueva:',
+				'en-US': 'Vibrate on Flip:'
+			},
+			"Vibration",
+			input => vibrate = input.checked,
+			() => {clickAudio.play(); flipPulse();}
+		)));
+	}
 
 	// History size
 	menuContainer.appendChild(menuOption((function() {
