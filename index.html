@@ -156,6 +156,11 @@
 			z-index: 0;
 		}
 
+		#carta.dealing {
+			transform: scale(1.13) translateY(-4vh);
+			transition: 0.5s ease;
+		}
+
 		#carta.flipped {
 			transform: scaleX(0);
 			transition: transform 0.1s ease;
@@ -632,6 +637,9 @@ function loadApp() {
 	// App settings
 	const menuSettings = settingsStorage();
 
+	// Access array for all items that depend on the display language property to function correctly
+	const langConverters = [];
+
 	// Baraja theme colors
 	const YELLOW = '220, 180, 10';
 	const LIGHT_YELLOW = '250, 220, 100';
@@ -709,6 +717,7 @@ function loadApp() {
 
 	function loteriaAudio(filename, volume = 1) {
 		const sound = new Audio(filename);
+		sound.load();
 
 		return {
 			mute: function() {
@@ -785,6 +794,9 @@ function loadApp() {
 		const s = new SpeechSynthesisUtterance();
 		s.lang = dispLang;
 
+		// Ensure that the synthesizer is updated when the language setting is changed
+		langConverters.push(() => s.lang = dispLang);
+
 		return {
 			updateLang: function() {
 				s.lang = dispLang;
@@ -839,6 +851,7 @@ function loadApp() {
 		'en-US': 'Stop!'
 	};
 	stateText.innerText = startText[dispLang];
+	langConverters.push(() => stateText.innerText = startText[dispLang]);
 
 	// DOM element that holds the previously shown cards
 	const cartaHistory = document.getElementById("history");
@@ -1263,8 +1276,9 @@ function loadApp() {
 		});
 
 		// Starting!
-		synth.updateLang();
+		// synth.updateLang();
 
+		cardDOMElement.classList.add("dealing");
 		const startMsg = {
 			'es-US': '¡Corre y se va corriendo, CON!',
 			'es-ES': '¡Corre y se va corriendo, CON!',
@@ -1347,6 +1361,7 @@ function loadApp() {
 
 			document.getElementById("spacer").classList.toggle("playing");
 
+			carta.classList.remove("dealing");
 			carta.style.background = `url("${barajaImg.src}")`;
 			carta.style.backgroundPosition = "center";
 			carta.style.backgroundSize = "100% 100%";
@@ -1436,9 +1451,6 @@ function loadApp() {
 		menuOverlay.classList.remove("engaged");
 	});
 
-	// Access array for all menu text
-	const menuText = [];
-
 	// Access array for the menu reset button
 	const resetters = [];
 
@@ -1446,7 +1458,7 @@ function loadApp() {
 		const p = document.createElement("p");
 
 		// Push the DOM elements to the access array for the language setting
-		menuText.push(() => p.innerText = text[dispLang]);
+		langConverters.push(() => p.innerText = text[dispLang]);
 
 		// Set the language of the container DOM element to the current display language
 		p.innerText = text[dispLang];
@@ -1526,7 +1538,7 @@ function loadApp() {
 			dispLang = select.value;
 			menuSettings.setLanguageSetting(dispLang);
 
-			menuText.forEach(l => l());
+			langConverters.forEach(l => l());
 		});
 
 		return [createIcon(langImg), select];
@@ -1553,7 +1565,10 @@ function loadApp() {
 		},
 		"Announcement",
 		input => announceBaraja = input.checked,
-		() => {clickAudio.play(); synth.play("Ámonos");}
+		() => {
+			clickAudio.play();
+			synth.play(({'es-US': "Ámonos", 'es-ES': "Ámonos", 'en-US': "Let's Go"})[dispLang]);
+		}
 	)));
 
 	// Seconds per baraja
