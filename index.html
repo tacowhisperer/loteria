@@ -157,7 +157,7 @@
 		}
 
 		#carta.dealing {
-			transform: scale(1.13) translateY(-4vh);
+			transform: scale(1.15) translateY(-6vh);
 			transition: 0.5s ease;
 		}
 
@@ -181,7 +181,7 @@
 		}
 
 		#carta.clicked {
-			scale: 1.05;
+			scale: 1.07;
 		}
 
 		#carta.buenas {
@@ -248,26 +248,26 @@
 
 		#buenas {
 			background-image: url("coins-29899.svg");
-			transform: translate(-6.5vw, 55vh);
+			transform: translate(-5vw, 55vh);
 		}
 
 		#buenas.clicked {
-			transform: translate(-6.5vw, 37.5vh) scale(1.1);
+			transform: translate(-5vw, 35.5vh) scale(1.1);
 		}
 
 		#buenas.alto {
-			transform: translate(-6.5vw, 37vh);
+			transform: translate(-5vw, 35vh);
 		}
 
 		#siguiente {
 			border-radius: 50%;
 			background-image: url("next-svgrepo-com.svg");
-			transform: translate(-6.5vw, 37vh);
+			transform: translate(-5vw, 35vh);
 			opacity: 1;
 		}
 
 		#siguiente.clicked {
-			transform: translate(-6.5vw, 37.5vh) scale(1.1);
+			transform: translate(-5vw, 35.5vh) scale(1.1);
 		}
 
 		#siguiente.inactive {
@@ -276,7 +276,7 @@
 		}
 
 		#siguiente.alto {
-			transform: translate(-6.5vw, 55vh);
+			transform: translate(-5vw, 55vh);
 		}
 
 		#siguiente_timer {
@@ -297,7 +297,7 @@
 		}
 
 		#spacer.playing {
-			width: 13vw;
+			width: 10vw;
 		}
 
 		#container {
@@ -1469,7 +1469,7 @@ function loadApp() {
 	const createIcon = function(img) {
 		const div = document.createElement("div");
 		div.classList.add('menu_option_icon');
-		div.style.backgroundImage = `url("${langImg.src}")`;
+		div.style.backgroundImage = `url("${img.src}")`;
 
 		return div;
 	};
@@ -1547,8 +1547,8 @@ function loadApp() {
 	// Let the game flip to the next card automatically or not
 	menuContainer.appendChild(menuOption(createToggleSetting(
 		{
-			'es-US': 'Auto Repartir:',
-			'es-ES': 'Auto Repartir',
+			'es-US': 'Auto Repartir Cartas:',
+			'es-ES': 'Auto Repartir Cartas',
 			'en-US': 'Auto Deal Cards:'
 		},
 		"AutoFlipMode",
