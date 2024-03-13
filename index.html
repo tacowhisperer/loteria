@@ -146,7 +146,7 @@
 			width: 40.06vh; /* includes 2*border width due to box-sizing CSS */
 
 			cursor: pointer;
-			transition: transform 0.025s ease, opacity 0.60s ease;
+			transition: transform 0.5s ease, opacity 0.60s ease;
 			-webkit-tap-highlight-color: transparent;
 
 			display: flex;
@@ -157,12 +157,11 @@
 		}
 
 		#carta.dealing {
-			transform: scale(1.15) translateY(-6vh);
-			transition: 0.4s ease;
+			transform: scale(1.15) translateY(-6.5vh);
 		}
 
 		#carta.flipped {
-			transform: scaleX(0);
+			transform: scaleX(0) translateY(-6.5vh);
 			transition: transform 0.1s ease;
 		}
 
@@ -181,7 +180,7 @@
 		}
 
 		#carta.clicked {
-			scale: 1.07;
+			scale: 1.05;
 		}
 
 		#carta.buenas {
@@ -252,22 +251,22 @@
 		}
 
 		#buenas.clicked {
-			transform: translate(-5vw, 35.5vh) scale(1.1);
+			transform: translate(-5vw, 35vh) scale(1.1);
 		}
 
 		#buenas.alto {
-			transform: translate(-5vw, 35vh);
+			transform: translate(-5vw, 34.5vh);
 		}
 
 		#siguiente {
 			border-radius: 50%;
 			background-image: url("next-svgrepo-com.svg");
-			transform: translate(-5vw, 35vh);
+			transform: translate(-5vw, 34.5vh);
 			opacity: 1;
 		}
 
 		#siguiente.clicked {
-			transform: translate(-5vw, 35.5vh) scale(1.1);
+			transform: translate(-5vw, 35vh) scale(1.1);
 		}
 
 		#siguiente.inactive {
@@ -973,7 +972,7 @@ function loadApp() {
 				e.style.top = `${(i * (wH - cH) / (l - 1))}px`;
 
 				if (fadeHistory) {
-					e.style.opacity = (l - i) / l;
+					e.style.opacity = (l - i) / (l + 1);
 				} else {
 					e.style.opacity = 1;
 				}
