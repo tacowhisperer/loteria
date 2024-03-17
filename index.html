@@ -22,10 +22,6 @@
 		:root {
 			--background-image-width: 900px;
 			--background-image-height: 872px;
-
-			/* I'm leaving these in here to remind myself to think before reinventing the wheel */
-			--background-scroll-x: 200vw;
-			--background-scroll-y: 200vh;
 		}
 
 		* {
@@ -594,6 +590,24 @@
 </div>
 
 <script>
+// Modifier Keys
+const CTRL = /^Control$/;
+const ALT = /^Alt$/;
+const SHIFT = /^Shift$/;
+
+// Action Keys
+const ESC = /^Escape$/;
+const TAB = /^Tab$/;
+const SPACE = /^( )|(Spacebar)$/;
+const ENT = /^(Enter)|(Return)$/;
+const U = /^ArrowUp$/;
+const D = /^ArrowDown$/;
+const L = /^ArrowLeft$/;
+const R = /^ArrowRight$/;
+
+// Alphanumeric Keys
+const AN = k => new RegExp(`^${k.toUpperCase()}$`, 'i');
+
 // Holds actively pressed keys on the keyboard
 const keyMap = {};
 
@@ -1013,7 +1027,7 @@ function loadApp() {
 			"SoundEffect":	true,		// sfx sounds
 			"Announcement":	true,		// synthesizer speech
 			"Vibration":	true,		// device vibration on baraja flip
-			"HistorySize":	5,			// cards of history remain on display
+			"HistorySize":	6,			// cards of history remain on display
 			"FadeHistory":	true,		// fade baraja out as they show
 			"AutoFlipMode":	true		// auto-flip to next baraja
 		};
@@ -1509,11 +1523,21 @@ function loadApp() {
 	const createToggleSetting = function(text, op, varSet, onSet) {
 		const [input, toggleBtn] = createToggleSwitch();
 		const [menuGet, menuSet, menuDefaultGet] = [`get${op}Setting`, `set${op}Setting`, `getDefault${op}Setting`];
-		input.checked = menuSettings[menuGet]();
+		
+		try {
+			input.checked = menuSettings[menuGet]();
+		} catch {
+			input.checked = false;
+		}
 
 		const setter = () => {
 			input.checked = !input.checked;
-			menuSettings[menuSet](input.checked);
+
+			try {
+				menuSettings[menuSet](input.checked);
+			} catch {
+				console.log(`Secret item value not saved.`);
+			}
 
 			varSet(input);
 		};
@@ -1525,7 +1549,12 @@ function loadApp() {
 		});
 
 		resetters.push(() => {
-			input.checked = !menuSettings[menuDefaultGet](); // setter flips this from expected value
+			try {
+				input.checked = !menuSettings[menuDefaultGet](); // setter flips this from expected value
+			} catch {
+				input.checked = false;
+			}
+
 			setter();
 		});
 
@@ -1771,43 +1800,87 @@ function loadApp() {
 		}), btn];
 	})()));
 
-	const keyHandlers = {};
+	// Add the secret menu options
+	let secretMenu = false;
+	keySeries([U, U, D, D, L, R, L, R, AN('B'), AN('A'), ENT], () => {
+		if (!secretMenu) {
+			menuContainer.appendChild(menuOption(createToggleSetting(
+				{
+					'es-US': 'Usar Imágenes HD:',
+					'es-ES': 'Usar Imágenes HD:',
+					'en-US': 'Use HD Images'
+				},
+				"HDImages",
+				input => {
+					backgroundImg.src = `real_esrgan_loteria${input.checked ? '_hd' : ''}.jpg`;
+					backgroundImg.onload = () => bg.style.backgroundImage = `url("${backgroundImg.src}")`;
+				},
+				() => clickAudio.play()
+			)));
+
+			clickAudio.play();
+			secretMenu = true;
+		}
+	});
 
 	// https://stackoverflow.com/questions/5203407/how-to-detect-if-multiple-keys-are-pressed-at-once-using-javascript
-	function on(key, when, fn, preventDefault = true) {
-		if (!(keyHandlers[key] instanceof Array)) {
-			keyHandlers[key] = [];
-		}
-
-		keyHandlers[key].push(e => {
+	function on(activationCombo, when, keyDownFn, keyUpFn = e => {}) {
+		const onK = fn => (e) => {
 			if (when()) {
-				if (preventDefault) {
-					e.preventDefault();
-				}
-			}
-		});
-	}
-
-	function on(activationCombo, when, keyDownFn, keyUpFn = (aKS, e) => {}) {
-		const keyCombo = new Set(activationCombo);
-
-		const onK = fn => (activeKeySet, e) => {
-			if (when() && keyCombo.union(activeKeySet).size() === keyCombo.size()) {
 				e.preventDefault();
 				fn(e);
 			}
 		};
 
-		onKeyDown.push(onK(keyDownFn));
-		onKeyUp.push(onK(keyUpFn));
+		onKeyDown.push({keys: activationCombo, fn: onK(keyDownFn)});
+		onKeyUp.push({keys: activationCombo, fn: onK(keyUpFn)});
+	}
+
+	function keySeries(combo, fn, bwTime = 1000) {
+		const MAX_TIME_BW_PRESS = bwTime; // milliseconds
+
+		let idx = 0;
+		let clock = 0;
+		combo.forEach((regK, i) => on([regK], () => idx === i, e => {
+			if (idx === combo.length - 1) {
+				clearTimeout(clock);
+				idx = 0;
+
+				// Success!
+				fn(e);
+			}
+
+		}, e => {			
+			// This is a successful key press in the combo, so increment to the next value
+			idx++;
+			clearTimeout(clock);
+			clock = setTimeout(() => idx = 0, MAX_TIME_BW_PRESS);
+		}));
+	}
+
+	function keyComboMatch(activeKeys, activationKeys) {
+		if (activeKeys.length !== activationKeys.length) {
+			return false;
+		}
+
+		let allMatch = true;
+		activeKeys.forEach(strK => allMatch = allMatch && activationKeys.reduce((match, regK) => match || !!strK.match(regK), false));
+		return allMatch;
 	}
 
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
 	window.addEventListener("keydown", e => {
+		// Modifier keys override any previously entered keys with the highest priority given to Ctrl, then (Alt || Shift)
+		if (e.key === CTRL) {
+			Object.keys(keyMap).forEach(key => delete keyMap[key]);
+		} else if (e.key === ALT || e.key === SHIFT) {
+			Object.keys(keyMap).filter(k => (k !== CTRL) || (k !== ALT) || (k !== SHIFT)).forEach(key => delete keyMap[key]);
+		}
+
 		keyMap[e.key] = true;
 
-		const activeKeySet = new Set(Object.keys(keyMap));
-		onKeyDown.forEach(fn => fn(activeKeySet, e));
+		const activeKeys = Object.keys(keyMap);
+		onKeyDown.filter(km => keyComboMatch(activeKeys, km.keys)).forEach(match => match.fn(e));
 
 		// // Spacebar
 		// if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
@@ -1823,8 +1896,8 @@ function loadApp() {
 		// Register the key that was released
 		keyMap[e.key] = false;
 
-		const activeKeySet = new Set(Object.keys(keyMap));
-		onKeyUp.forEach(fn => fn(activeKeySet, e));
+		const activeKeys = Object.keys(keyMap);
+		onKeyUp.filter(km => keyComboMatch(activeKeys, km.keys)).forEach(match => match.fn(e));
 
 		// End any key combinations, if any are registered
 		Object.keys(keyMap).forEach(key => delete keyMap[key]);
