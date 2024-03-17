@@ -594,8 +594,19 @@
 </div>
 
 <script>
+// Holds actively pressed keys on the keyboard
+const keyMap = {};
+
+// Holds all functions that are called when a key is pressed down
+const onKeyDown = [];
+
+// Holds all functions that are called when a key is released
+const onKeyUp = [];
+
+// Main App Container
 const container = document.getElementById("container");
 
+// App Images
 const loteriaImg = new Image();
 loteriaImg.src = 'loteria.jpg';
 
@@ -1760,16 +1771,59 @@ function loadApp() {
 		}), btn];
 	})()));
 
+	const keyHandlers = {};
+
+	// https://stackoverflow.com/questions/5203407/how-to-detect-if-multiple-keys-are-pressed-at-once-using-javascript
+	function on(key, when, fn, preventDefault = true) {
+		if (!(keyHandlers[key] instanceof Array)) {
+			keyHandlers[key] = [];
+		}
+
+		keyHandlers[key].push(e => {
+			if (when()) {
+				if (preventDefault) {
+					e.preventDefault();
+				}
+			}
+		});
+	}
+
+	function on(activationCombo, when, keyDownFn, keyUpFn = (aKS, e) => {}) {
+		const keyCombo = new Set(activationCombo);
+
+		const onK = fn => (activeKeySet, e) => {
+			if (when() && keyCombo.union(activeKeySet).size() === keyCombo.size()) {
+				e.preventDefault();
+				fn(e);
+			}
+		};
+
+		onKeyDown.push(onK(keyDownFn));
+		onKeyUp.push(onK(keyUpFn));
+	}
+
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
 	window.addEventListener("keydown", e => {
-		// Spacebar
-		if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
-			// Prevent the default spacebar behavior of scrolling the page
-			e.preventDefault();
+		keyMap[e.key] = true;
+		onKeyDown.forEach(fn => fn(e));
 
-			// Fire off the carta activator event
-			carta.dispatchEvent(new Event(activator));
-		}
+		// // Spacebar
+		// if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
+		// 	// Prevent the default spacebar behavior of scrolling the page
+		// 	e.preventDefault();
+
+		// 	// Fire off the carta activator event
+		// 	carta.dispatchEvent(new Event(activator));
+		// }
+	});
+
+	window.addEventListener("keyup", e => {
+		// Register the key that was released
+		keyMap[e.key] = false;
+		onKeyUp.forEach(fn => fn(e));
+
+		// End any key combinations, if any are registered
+		Object.keys(keyMap).forEach(key => delete keyMap[key]);
 	});
 
 	// Make sure that the card history continues to be correctly positioned even on window resize
