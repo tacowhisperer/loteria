@@ -1805,7 +1805,9 @@ function loadApp() {
 	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
 	window.addEventListener("keydown", e => {
 		keyMap[e.key] = true;
-		onKeyDown.forEach(fn => fn(e));
+
+		const activeKeySet = new Set(Object.keys(keyMap));
+		onKeyDown.forEach(fn => fn(activeKeySet, e));
 
 		// // Spacebar
 		// if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
@@ -1820,7 +1822,9 @@ function loadApp() {
 	window.addEventListener("keyup", e => {
 		// Register the key that was released
 		keyMap[e.key] = false;
-		onKeyUp.forEach(fn => fn(e));
+
+		const activeKeySet = new Set(Object.keys(keyMap));
+		onKeyUp.forEach(fn => fn(activeKeySet, e));
 
 		// End any key combinations, if any are registered
 		Object.keys(keyMap).forEach(key => delete keyMap[key]);
