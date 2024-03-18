@@ -1814,8 +1814,17 @@ function loadApp() {
 				},
 				"HDImages",
 				input => {
-					backgroundImg.src = `real_esrgan_loteria${input.checked ? '_hd' : ''}.jpg`;
+					const res = input.checked ? '_hd' : '';
+
+					backgroundImg.src = `real_esrgan_loteria${res}.jpg`;
 					backgroundImg.onload = () => bg.style.backgroundImage = `url("${backgroundImg.src}")`;
+
+					barajaImg.src = `back${res}.png`;
+					barajaImg.onload = () => {
+						carta.style.background = `url("${barajaImg.src}")`;
+						carta.style.backgroundPosition = "center";
+						carta.style.backgroundSize = "100% 100%";
+					};
 				},
 				() => clickAudio.play()
 			)));
