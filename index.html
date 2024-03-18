@@ -22,6 +22,8 @@
 		:root {
 			--background-image-width: 900px;
 			--background-image-height: 872px;
+			--highlight-color: #046a6a;
+			--highlight-color-transparent: #d80b7780;
 		}
 
 		* {
@@ -419,7 +421,7 @@
 			margin-top: 3.5vh;
 			padding-top: 3.5vh;
 			border-top: 0.15rem solid;
-			border-image: linear-gradient(to right, #d80b77, transparent) 1 0 0 0;
+			border-image: linear-gradient(to right, var(--highlight-color), transparent) 1 0 0 0;
 		}
 
 		.menu_option_icon {
@@ -514,7 +516,7 @@
 		}
 
 		.toggle-input:checked + .toggle-track {
-			background-color: #d80b77;
+			background-color: var(--highlight-color);
 		}
 
 		.toggle-input:checked + .toggle-track .toggle-thumb {
@@ -524,7 +526,7 @@
 		/* Misc */
 		.panic-button {
 			aspect-ratio: 3 / 2;
-			background-color: #a5a5a580;
+			background-color: #a5a5a5;
 			border-radius: min(2vw, 2vh);
 			display: flex;
 			justify-content: center;
@@ -540,7 +542,7 @@
 		}
 
 		.panic-button.active {
-			background-color: #d80b7780;
+			background-color: var(--highlight-color-transparent);
 		}
 	</style>
 </head>
