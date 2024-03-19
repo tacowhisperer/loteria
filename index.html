@@ -1020,6 +1020,9 @@ function loadApp() {
 
 		positionHistory();
 	}
+
+	// Initialize and continually set the history position
+	window.addEventListener("resize", positionHistory);
 	populateHistory();
 
 	function settingsStorage() {
@@ -1463,19 +1466,17 @@ function loadApp() {
 		}, 600);
 	});
 
-	// Make the menu button engage the proper overlays
-	menu.addEventListener(activator, () => {
+	const toggleMenu = () => {
 		menu.classList.toggle("change");
 		menuRibbon.classList.toggle("engaged");
 		menuOverlay.classList.toggle("engaged");
-	});
+	};
+
+	// Make the menu button engage the proper overlays
+	menu.addEventListener(activator, toggleMenu);
 
 	// Make the overlay disengage the menu if it's accessible
-	menuOverlay.addEventListener(activator, () => {
-		menu.classList.remove("change");
-		menuRibbon.classList.remove("engaged");
-		menuOverlay.classList.remove("engaged");
-	});
+	menuOverlay.addEventListener(activator, toggleMenu);
 
 	// Access array for the menu reset button
 	const resetters = [];
@@ -1860,7 +1861,6 @@ function loadApp() {
 				// Success!
 				fn(e);
 			}
-
 		}, e => {			
 			// This is a successful key press in the combo, so increment to the next value
 			idx++;
@@ -1879,7 +1879,7 @@ function loadApp() {
 		return allMatch;
 	}
 
-	// Add a keydown event to the window so that when spacebar is pressed, it's as if the activator was used
+	// Keydown keyboard framework
 	window.addEventListener("keydown", e => {
 		// Modifier keys override any previously entered keys with the highest priority given to Ctrl, then (Alt || Shift)
 		if (e.key === CTRL) {
@@ -1892,17 +1892,9 @@ function loadApp() {
 
 		const activeKeys = Object.keys(keyMap);
 		onKeyDown.filter(km => keyComboMatch(activeKeys, km.keys)).forEach(match => match.fn(e));
-
-		// // Spacebar
-		// if (e.key === ' ' && !menuOverlay.classList.contains("engaged")) {
-		// 	// Prevent the default spacebar behavior of scrolling the page
-		// 	e.preventDefault();
-
-		// 	// Fire off the carta activator event
-		// 	carta.dispatchEvent(new Event(activator));
-		// }
 	});
 
+	// Keyup keyboard framework
 	window.addEventListener("keyup", e => {
 		// Register the key that was released
 		keyMap[e.key] = false;
@@ -1914,8 +1906,21 @@ function loadApp() {
 		Object.keys(keyMap).forEach(key => delete keyMap[key]);
 	});
 
-	// Make sure that the card history continues to be correctly positioned even on window resize
-	window.addEventListener("resize", positionHistory);
+	/* Keyboard functionality code */
+
+	// Spacebar toggles whatever functionality is available on the carta
+	on([SPACE], () => !menuOverlay.classList.contains("engaged"), () => carta.dispatchEvent(new Event(activator)));
+
+	// Enter toggles whatever button is available during a game
+	on([ENT], () => game && !next.classList.contains("inactive") && !ui[0].classList.contains("buenas"), () => {
+		(next.classList.contains("alto") ? buenas : next).dispatchEvent(new Event(activator));
+	});
+
+	// L key opens the menu while there's no active game
+	on([L], () => !menuOverlay.classList.contains("engaged") && !game, toggleMenu);
+
+	// R key closes the menu while there's no active game
+	on([R], () => menuOverlay.classList.contains("engaged") && !game, toggleMenu);
 }
 
 </script>
