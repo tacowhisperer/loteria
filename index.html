@@ -23,7 +23,7 @@
 			--background-image-width: 900px;
 			--background-image-height: 872px;
 			--highlight-color: #046a6a;
-			--highlight-color-light: #2aa7d5;
+			--highlight-color-light: #2aa7d5aa;
 			--highlight-color-transparent: #d80b7780;
 		}
 
@@ -487,11 +487,10 @@
 
 		.focused {
 			color: var(--highlight-color-light);
-			-webkit-text-stroke: 0.1rem black;
-		}
-
-		.focused:first-child {
-			/*box-shadow: 0 0 1rem 0.5rem  var(--highlight-color);*/
+			border-radius: 0.5rem;
+			box-shadow: 0 0 1rem 0.5rem  var(--highlight-color);
+			padding: 1rem;
+			transition: padding 0.2s ease;
 		}
 
 		/* Toggle CSS */
@@ -1477,12 +1476,14 @@ function loadApp() {
 	});
 
 	const toggleFocusedMenuItemStyle = (li, mode = 't') => {
+		const el = li.children[0];
+
 		if (mode === 't')
-			li.classList.toggle("focused");
+			el.classList.toggle("focused");
 		else if (mode === 'r')
-			li.classList.remove("focused");
+			el.classList.remove("focused");
 		else
-			li.classList.add("focused");
+			el.classList.add("focused");
 	};
 
 	const toggleMenu = () => {
@@ -1966,7 +1967,6 @@ function loadApp() {
 
 				menuItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				toggleFocusedMenuItemStyle(menuItem, 'a');
-				menuItem.classList.add("focused");
 			}
 		};
 	};
