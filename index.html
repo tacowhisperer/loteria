@@ -1961,8 +1961,6 @@ function loadApp() {
 					menuIdx = ((inc(menuIdx) % len) + len) % len;
 				}
 				
-				console.log(menuIdx);
-
 				const menuItem = menuContainer.children[menuIdx];
 
 				menuItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
