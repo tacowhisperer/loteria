@@ -23,6 +23,7 @@
 			--background-image-width: 900px;
 			--background-image-height: 872px;
 			--highlight-color: #046a6a;
+			--highlight-color-light: #2aa7d5;
 			--highlight-color-transparent: #d80b7780;
 		}
 
@@ -482,6 +483,15 @@
 			padding: 0 3rem;
 			height: min(15vw, 15vh);
 			text-align: center;
+		}
+
+		.focused {
+			color: var(--highlight-color-light);
+			-webkit-text-stroke: 0.1rem black;
+		}
+
+		.focused:first-child {
+			/*box-shadow: 0 0 1rem 0.5rem  var(--highlight-color);*/
 		}
 
 		/* Toggle CSS */
@@ -1466,10 +1476,22 @@ function loadApp() {
 		}, 600);
 	});
 
+	const toggleFocusedMenuItemStyle = (li, mode = 't') => {
+		if (mode === 't')
+			li.classList.toggle("focused");
+		else if (mode === 'r')
+			li.classList.remove("focused");
+		else
+			li.classList.add("focused");
+	};
+
 	const toggleMenu = () => {
 		menu.classList.toggle("change");
 		menuRibbon.classList.toggle("engaged");
 		menuOverlay.classList.toggle("engaged");
+
+		// Remove any potentially leftover focused menu item styles
+		[...menuContainer.children].forEach(child => toggleFocusedMenuItemStyle(child, 'r'));
 	};
 
 	// Make the menu button engage the proper overlays
@@ -1907,9 +1929,10 @@ function loadApp() {
 	});
 
 	/* Keyboard functionality code */
+	const activeMenu = () => menuOverlay.classList.contains("engaged");
 
 	// Spacebar toggles whatever functionality is available on the carta
-	on([SPACE], () => !menuOverlay.classList.contains("engaged"), () => carta.dispatchEvent(new Event(activator)));
+	on([SPACE], () => !activeMenu(), () => carta.dispatchEvent(new Event(activator)));
 
 	// Enter toggles whatever button is available during a game
 	on([ENT], () => game && !next.classList.contains("inactive") && !ui[0].classList.contains("buenas"), () => {
@@ -1917,10 +1940,47 @@ function loadApp() {
 	});
 
 	// L key opens the menu while there's no active game
-	on([L], () => !menuOverlay.classList.contains("engaged") && !game, toggleMenu);
+	on([L], () => !activeMenu() && !game, toggleMenu);
 
-	// R key closes the menu while there's no active game
-	on([R], () => menuOverlay.classList.contains("engaged") && !game, toggleMenu);
+	// R key closes the menu
+	on([R], () => activeMenu(), toggleMenu);
+
+	// U key moves focus up on the menu if it's active
+	let menuIdx = false;
+	let onControlItem = false;
+
+	const shiftToMenuItem = inc => {
+		return () => {
+			const len = menuContainer.children.length;
+			if (!onControlItem) {
+				if (menuIdx === false) {
+					menuIdx = 0;
+				} else {
+					toggleFocusedMenuItemStyle(menuContainer.children[menuIdx], 'r');
+					menuIdx = ((inc(menuIdx) % len) + len) % len;
+				}
+				
+				console.log(menuIdx);
+
+				const menuItem = menuContainer.children[menuIdx];
+
+				menuItem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				toggleFocusedMenuItemStyle(menuItem, 'a');
+				menuItem.classList.add("focused");
+			}
+		};
+	};
+
+	on([U], () => activeMenu(), shiftToMenuItem(v => v - 1));
+
+	// D key moves focus down on the menu if it's active
+	on([D], () => activeMenu(), shiftToMenuItem(v => v + 1));
+
+	// Enter key on a focused menu item brings into focus the menu control item (usually the 2nd child of the li element)
+	// TODO: This
+
+	// Escape key returns to the focused menu item state if not already there while the menu is open
+	// TODO: And This
 }
 
 </script>
