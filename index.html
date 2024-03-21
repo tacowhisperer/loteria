@@ -23,7 +23,7 @@
 			--background-image-width: 900px;
 			--background-image-height: 872px;
 			--highlight-color: #046a6a;
-			--highlight-color-light: #2aa7d5aa;
+			--highlight-color-light: #2aa7d5ee;
 			--highlight-color-transparent: #d80b7780;
 		}
 
@@ -490,6 +490,7 @@
 			border-radius: 0.5rem;
 			box-shadow: 0 0 1rem 0.5rem  var(--highlight-color);
 			padding: 1rem;
+			font-size: 1.1em;
 			transition: padding 0.2s ease;
 		}
 
@@ -1569,10 +1570,14 @@ function loadApp() {
 		};
 
 		// Activation of the toggle slider
-		toggleBtn.addEventListener(activator, () => {
+		toggleBtn.hook = releaseFn => {
 			setter();
 			onSet();
-		});
+			if (releaseFn) {
+				releaseFn();
+			}
+		};
+		toggleBtn.addEventListener(activator, toggleBtn.hook);
 
 		resetters.push(() => {
 			try {
@@ -1759,10 +1764,12 @@ function loadApp() {
 
 	// Reset all other settings to their default values
 	menuContainer.appendChild(menuOption((function() {
+		const tries = 5;
+
 		let resetTimer = 0;
 		let resetting = false;
 
-		const defaultStr = `❌ (3)`;
+		const defaultStr = `❌ (${tries})`;
 
 		const btn = document.createElement("div");
 		btn.classList.add("panic-button");
@@ -1779,7 +1786,7 @@ function loadApp() {
 			btn.style.backgroundColor = defaultBGColor;
 		};
 
-		btn.addEventListener(activator, () => {
+		btn.hook = releaseFn => {
 			const btnText = btn.children[0].innerText;
 			const btnNum = btnText.substring(3, btnText.length - 1);
 
@@ -1817,7 +1824,13 @@ function loadApp() {
 					}, 2000);
 				}
 			}
-		});
+
+			if (releaseFn) {
+				releaseFn();
+			}
+		};
+
+		btn.addEventListener(activator, btn.hook);
 
 		return [createMenuText({
 			'es-US': 'Resetear Todo Ajuste:',
@@ -1846,6 +1859,7 @@ function loadApp() {
 					barajaImg.src = `back${res}.png`;
 					barajaImg.onload = () => {
 						carta.style.background = `url("${barajaImg.src}")`;
+						carta.style.backgroundColor = 'white';
 						carta.style.backgroundPosition = "center";
 						carta.style.backgroundSize = "100% 100%";
 					};
@@ -1930,6 +1944,7 @@ function loadApp() {
 	});
 
 	/* Keyboard functionality code */
+	let onControlItem = false;
 	const activeMenu = () => menuOverlay.classList.contains("engaged");
 
 	// Spacebar toggles whatever functionality is available on the carta
@@ -1941,14 +1956,14 @@ function loadApp() {
 	});
 
 	// L key opens the menu while there's no active game
-	on([L], () => !activeMenu() && !game, toggleMenu);
+	on([L], () => !activeMenu() && !game && !onControlItem, toggleMenu);
 
-	// R key closes the menu
-	on([R], () => activeMenu(), toggleMenu);
+	// R key or ESC closes the menu if it's open and not engaged in a menu option
+	on([R], () => activeMenu() && !onControlItem, toggleMenu);
+	on([ESC], () => activeMenu() && !onControlItem, toggleMenu);
 
 	// U key moves focus up on the menu if it's active
 	let menuIdx = false;
-	let onControlItem = false;
 
 	const shiftToMenuItem = inc => {
 		return () => {
@@ -1969,16 +1984,32 @@ function loadApp() {
 		};
 	};
 
-	on([U], () => activeMenu(), shiftToMenuItem(v => v - 1));
+	on([U], () => activeMenu() && !onControlItem, shiftToMenuItem(v => v - 1));
 
 	// D key moves focus down on the menu if it's active
-	on([D], () => activeMenu(), shiftToMenuItem(v => v + 1));
+	on([D], () => activeMenu() && !onControlItem, shiftToMenuItem(v => v + 1));
 
-	// Enter key on a focused menu item brings into focus the menu control item (usually the 2nd child of the li element)
-	// TODO: This
+	// Enter key on a focused menu item hooks onto the menu control item (usually the 2nd child of the li element)
+	on([ENT], () => activeMenu() && !onControlItem, () => {
+		if (menuIdx !== false) {
+			onControlItem = true;
+
+			const target = menuContainer.children[menuIdx].children[1];
+					
+			try {
+				target.hook(() => onControlItem = false);
+			} catch {
+				console.log('focusing element instead of hooking');
+				target.focus({ preventScroll: true, focusVisible: true });
+			}
+		}
+	});
 
 	// Escape key returns to the focused menu item state if not already there while the menu is open
-	// TODO: And This
+	on([ESC], () => activeMenu() && onControlItem, () => {
+		menuContainer.children[menuIdx].children[1].blur();
+		onControlItem = false;
+	});
 }
 
 </script>
