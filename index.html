@@ -602,6 +602,8 @@
 </div>
 
 <script>
+const u = Math.random;
+
 // Modifier Keys
 const CTRL = /^Control$/;
 const ALT = /^Alt$/;
@@ -749,7 +751,16 @@ function loadApp() {
 		["La Rana", [BLUE, GREEN]]
 	];
 
-	const u = Math.random;
+	loteriaDeck.forEach((c, i) => c.push(i));
+
+	// Index values to access the 'loteria' array
+	const NAME = 0;
+	const X_Y = 1;
+	const COLOR = 2;
+	const ABS_IDX = 3;
+
+	// Generate the initial deck that can be used by the game
+	const loteria = loteriaDeck.map((card, i) => [card[0], iTo2D(i, 6, 9), card[1], card[2]]);
 
 	function loteriaAudio(filename, volume = 1) {
 		const sound = new Audio(filename);
@@ -857,9 +868,79 @@ function loadApp() {
 		play: msg => console.log(`Speech synthesizer not supported!`)
 	};
 
-	const NAME = 0;
-	const X_Y = 1;
-	const COLOR = 2;
+	const cardAnnouncer = (function(startingVoiceIndex) {
+		const voices = ['MALE', 'FEMALE'];
+		let vI = startingVoiceIndex;
+		let voice = voices[vI];
+
+		const AMONOS = loteria.length;
+		const CORRE = AMONOS + 1;
+
+		const cardAudios = {};
+		let currentVoice = voice;
+
+		cardAudios[dispLang] = {};
+		cardAudios[dispLang]['MALE'] = [];
+		cardAudios[dispLang]['FEMALE'] = [];
+
+		const loadAudios = () => {
+			loteria.forEach(c => {
+				cardAudios[dispLang]['MALE'][c[ABS_IDX]] = new Audio(`audio/${dispLang}_MALE_${c[ABS_IDX]}.mp3`);
+				cardAudios[dispLang]['FEMALE'][c[ABS_IDX]] = new Audio(`audio/${dispLang}_FEMALE_${c[ABS_IDX]}.mp3`);
+			});
+
+			cardAudios[dispLang]['MALE'][AMONOS] = new Audio(`audio/${dispLang}_MALE_amonos.mp3`);
+			cardAudios[dispLang]['FEMALE'][AMONOS] = new Audio(`audio/${dispLang}_FEMALE_amonos.mp3`);
+			cardAudios[dispLang]['MALE'][CORRE] = new Audio(`audio/${dispLang}_MALE_corre.mp3`);
+			cardAudios[dispLang]['FEMALE'][CORRE] = new Audio(`audio/${dispLang}_FEMALE_corre.mp3`);
+		};
+		loadAudios();
+
+		let prevPlay = false;
+		const controler = {
+			AMONOS: AMONOS,
+			CORRE: CORRE,
+
+			play: function(i, name) {
+				if (announceBaraja) {
+					if (prevPlay !== false) {
+						cardAudios[dispLang][currentVoice][prevPlay].pause();
+					}
+
+					// Fallback to the synthesizer if the voice file isn't ready yet
+					if (cardAudios[dispLang][currentVoice][i].readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+						cardAudios[dispLang][currentVoice][i].play();
+						prevPlay = i;
+					} else {
+						synth.play(name);
+					}
+				}
+
+				return this;
+			},
+
+			updateLang: function() {
+				prevPlay = false;
+				if (!cardAudios[dispLang] && !(cardAudios[dispLang][currentVoice] instanceof Array)) {
+					cardAudios[dispLang] = {};
+					cardAudios[dispLang]['MALE'] = [];
+					cardAudios[dispLang]['FEMALE'] = [];
+				}
+
+				loadAudios();
+				return this;
+			},
+
+			randomizeVoice: function() {
+				prevPlay = false;
+				currentVoice = voices[(vI++ % voices.length)];
+				return this;
+			}
+		}
+
+		langConverters.push(controler.updateLang);
+		return controler;
+	})(Math.round(u()));
 
 	// DOM element that displays the current loteria card, and is multi-use depending on the game state.
 	const carta = document.getElementById("carta");
@@ -992,9 +1073,6 @@ function loadApp() {
 			step: beat.step
 		};
 	})(game);
-
-	// Generate the initial deck that can be used by the game
-	const loteria = loteriaDeck.map((card, i) => [card[0], iTo2D(i, 6, 9), card[1]]);
 
 	// Position each history card correctly in the viewport and apply a fade from the top to the bottom
 	const positionHistory = () => {
@@ -1272,7 +1350,7 @@ function loadApp() {
 					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
-					synth.play(gameDeck[gameIndex][NAME]);
+					cardAnnouncer.play(gameDeck[gameIndex][ABS_IDX], gameDeck[gameIndex][NAME]);
 
 					gameIndex++;
 
@@ -1289,6 +1367,9 @@ function loadApp() {
 	}
 
 	function play(gameDeck, cardDOMElement, cardHistoryDOMArray, displayCardTime = 5000) {
+		// Give the card announcer the most amount of time possible to use a new voice
+		cardAnnouncer.randomizeVoice();
+
 		stateText.innerText = runningText[dispLang];
 		setTimeout(() => {
 			stateText.classList.add("explode");
@@ -1315,16 +1396,15 @@ function loadApp() {
 		});
 
 		// Starting!
-		// synth.updateLang();
-
 		cardDOMElement.classList.add("dealing");
 		const startMsg = {
 			'es-US': '¡Corre y se va corriendo, CON!',
 			'es-ES': '¡Corre y se va corriendo, CON!',
-			'en-US': 'Run and it runs away, WITH!'
+			'en-US': 'Run and it runs away, WITH!',
+			id: 'corre'
 		};
 
-		synth.play(startMsg[dispLang]);
+		cardAnnouncer.play(cardAnnouncer.CORRE, startMsg[dispLang]);
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue).setFire(autoFlip);
 
 		// Give the starting message enough time to finish
@@ -1547,6 +1627,10 @@ function loadApp() {
 		return [input, toggleBtn];
 	};
 
+	const createNumericInput = function() {
+
+	};
+
 	const createToggleSetting = function(text, op, varSet, onSet) {
 		const [input, toggleBtn] = createToggleSwitch();
 		const [menuGet, menuSet, menuDefaultGet] = [`get${op}Setting`, `set${op}Setting`, `getDefault${op}Setting`];
@@ -1637,7 +1721,7 @@ function loadApp() {
 		input => announceBaraja = input.checked,
 		() => {
 			clickAudio.play();
-			synth.play(({'es-US': "Ámonos", 'es-ES': "Marcha", 'en-US': "Let's Go"})[dispLang]);
+			cardAnnouncer.play(cardAnnouncer.AMONOS, ({'es-US': "Ámonos", 'es-ES': "Marcha", 'en-US': "Let's Go", id: 'amonos'})[dispLang]);
 		}
 	)));
 
@@ -1649,7 +1733,7 @@ function loadApp() {
 			'en-US': 'Please use numeric values greater than or equal to 1.'
 		};
 
-		const input = document.createElement("input");
+		const input = document.createElement("input");		
 		input.type = "number";
 		input.value = dispTime / 1000;
 		input.previousValue = input.value;
@@ -1992,15 +2076,18 @@ function loadApp() {
 	// Enter key on a focused menu item hooks onto the menu control item (usually the 2nd child of the li element)
 	on([ENT], () => activeMenu() && !onControlItem, () => {
 		if (menuIdx !== false) {
-			onControlItem = true;
+			onControlItem = !onControlItem;
 
 			const target = menuContainer.children[menuIdx].children[1];
-					
-			try {
-				target.hook(() => onControlItem = false);
-			} catch {
-				console.log('focusing element instead of hooking');
-				target.focus({ preventScroll: true, focusVisible: true });
+				
+			if (onControlItem) {
+				try {
+					target.hook(() => onControlItem = false);
+				} catch {
+					target.focus({ preventScroll: true, focusVisible: true });
+				}
+			} else {
+				target.blur();
 			}
 		}
 	});
