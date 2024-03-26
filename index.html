@@ -188,7 +188,7 @@
 		}
 
 		#history {
-			height: 70vh;
+			height: 80vh;
 			width: 8.72vh;
 			opacity: 1;
 
@@ -879,20 +879,22 @@ function loadApp() {
 		const cardAudios = {};
 		let currentVoice = voice;
 
-		cardAudios[dispLang] = {};
-		cardAudios[dispLang]['MALE'] = [];
-		cardAudios[dispLang]['FEMALE'] = [];
+		const audioCtx = new AudioContext();
 
 		const loadAudios = () => {
-			loteria.forEach(c => {
-				cardAudios[dispLang]['MALE'][c[ABS_IDX]] = new Audio(`audio/${dispLang}_MALE_${c[ABS_IDX]}.mp3`);
-				cardAudios[dispLang]['FEMALE'][c[ABS_IDX]] = new Audio(`audio/${dispLang}_FEMALE_${c[ABS_IDX]}.mp3`);
-			});
+			if (!cardAudios.hasOwnProperty(dispLang)) {
+				cardAudios[dispLang] = {};
+				voices.forEach(v => cardAudios[dispLang][v] = []);
 
-			cardAudios[dispLang]['MALE'][AMONOS] = new Audio(`audio/${dispLang}_MALE_amonos.mp3`);
-			cardAudios[dispLang]['FEMALE'][AMONOS] = new Audio(`audio/${dispLang}_FEMALE_amonos.mp3`);
-			cardAudios[dispLang]['MALE'][CORRE] = new Audio(`audio/${dispLang}_MALE_corre.mp3`);
-			cardAudios[dispLang]['FEMALE'][CORRE] = new Audio(`audio/${dispLang}_FEMALE_corre.mp3`);
+				loteria.forEach(c => voices.forEach(v => cardAudios[dispLang][v][c[ABS_IDX]] = new Audio(`audio/${dispLang}_${v}_${c[ABS_IDX]}.mp3`)));
+				voices.forEach(v => {
+					cardAudios[dispLang][v][AMONOS] = new Audio(`audio/${dispLang}_${v}_amonos.mp3`);
+					cardAudios[dispLang][v][CORRE] = new Audio(`audio/${dispLang}_${v}_corre.mp3`);
+				});
+
+				console.log('loadaudios:');
+				console.log(cardAudios[dispLang]);
+			}
 		};
 		loadAudios();
 
@@ -907,11 +909,17 @@ function loadApp() {
 						cardAudios[dispLang][currentVoice][prevPlay].pause();
 					}
 
+					console.log('play voice:');
+					console.log(cardAudios[dispLang][currentVoice][i].readyState);
+
+					const source = audioCtx.createMediaElementSource(cardAudios[dispLang][currentVoice][i]);
+					source.connect(audioCtx.destination);
+
 					// Fallback to the synthesizer if the voice file isn't ready yet
-					if (cardAudios[dispLang][currentVoice][i].readyState === HTMLMediaElement.HAVE_ENOUGH_DATA) {
+					try {
 						cardAudios[dispLang][currentVoice][i].play();
 						prevPlay = i;
-					} else {
+					} catch {
 						synth.play(name);
 					}
 				}
@@ -921,12 +929,6 @@ function loadApp() {
 
 			updateLang: function() {
 				prevPlay = false;
-				if (!cardAudios.hasOwnProperty(dispLang) || !(cardAudios[dispLang][currentVoice] instanceof Array)) {
-					cardAudios[dispLang] = {};
-					cardAudios[dispLang]['MALE'] = [];
-					cardAudios[dispLang]['FEMALE'] = [];
-				}
-
 				loadAudios();
 				return this;
 			},
@@ -1084,7 +1086,7 @@ function loadApp() {
 
 			cartaHistoryDOMArr.forEach((e, i) => {
 				e.style.zIndex = historySize - i + 1;
-				e.style.top = `${(i * (wH - cH) / (l - 1))}px`;
+				e.style.top = `${(i * (wH - cH) / (l - 1)) + cH / 3}px`;
 
 				if (fadeHistory) {
 					e.style.opacity = (l - i) / (l + 1);
@@ -1628,7 +1630,7 @@ function loadApp() {
 	};
 
 	const createNumericInput = function() {
-
+		// TODO: This
 	};
 
 	const createToggleSetting = function(text, op, varSet, onSet) {
@@ -1657,7 +1659,7 @@ function loadApp() {
 		toggleBtn.hook = releaseFn => {
 			setter();
 			onSet();
-			if (releaseFn) {
+			if (releaseFn instanceof Function) {
 				releaseFn();
 			}
 		};
@@ -1721,7 +1723,7 @@ function loadApp() {
 		input => announceBaraja = input.checked,
 		() => {
 			clickAudio.play();
-			cardAnnouncer.play(cardAnnouncer.AMONOS, ({'es-US': "Ámonos", 'es-ES': "Marcha", 'en-US': "Let's Go", id: 'amonos'})[dispLang]);
+			cardAnnouncer.play(cardAnnouncer.AMONOS, startText[dispLang]);
 		}
 	)));
 
@@ -1909,7 +1911,7 @@ function loadApp() {
 				}
 			}
 
-			if (releaseFn) {
+			if (releaseFn instanceof Function) {
 				releaseFn();
 			}
 		};
