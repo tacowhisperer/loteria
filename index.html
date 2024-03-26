@@ -892,8 +892,6 @@ function loadApp() {
 					cardAudios[dispLang][v][CORRE] = new Audio(`audio/${dispLang}_${v}_corre.mp3`);
 				});
 
-				console.log('loadaudios:');
-				console.log(cardAudios[dispLang]);
 			}
 		};
 		loadAudios();
@@ -908,9 +906,6 @@ function loadApp() {
 					if (prevPlay !== false) {
 						cardAudios[dispLang][currentVoice][prevPlay].pause();
 					}
-
-					console.log('play voice:');
-					console.log(cardAudios[dispLang][currentVoice][i].readyState);
 
 					const source = audioCtx.createMediaElementSource(cardAudios[dispLang][currentVoice][i]);
 					source.connect(audioCtx.destination);
