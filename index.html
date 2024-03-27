@@ -672,9 +672,6 @@ const loadLoop = setInterval(() => {
 }, 25);
 
 function loadApp() {
-	// App audio context
-	let audioCtx;
-
 	// App settings
 	const menuSettings = settingsStorage();
 
@@ -915,6 +912,7 @@ function loadApp() {
 						}
 					}
 
+					const audioCtx = new AudioContext();
 					const audio = cardAudios[dispLang][currentVoice][i];
 
 					// Fallback to the synthesizer if the sound file can't play
@@ -931,9 +929,6 @@ function loadApp() {
 					} else {
 						synth.play(name);
 					}
-
-					// Reset the audio context object for subsequent calls
-					audioCtx = new AudioContext();
 				}
 
 				return this;
@@ -1364,7 +1359,6 @@ function loadApp() {
 					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
-					audioCtx = new AudioContext();
 					cardAnnouncer.play(gameDeck[gameIndex][ABS_IDX], gameDeck[gameIndex][NAME]);
 
 					gameIndex++;
@@ -1419,7 +1413,6 @@ function loadApp() {
 			id: 'corre'
 		};
 
-		audioCtx = new AudioContext();
 		cardAnnouncer.play(cardAnnouncer.CORRE, startMsg[dispLang]);
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue).setFire(autoFlip);
 
