@@ -925,11 +925,15 @@ function loadApp() {
 						try {
 							prevPlay = [audio.play(), audio];
 						} catch {
+							prevPlay = false;
 							synth.play(name);
 						}
 					} else {
 						synth.play(name);
 					}
+
+					// Reset the audio context object for subsequent calls
+					audioCtx = new AudioContext();
 				}
 
 				return this;
