@@ -897,6 +897,7 @@ function loadApp() {
 		loadAudios();
 
 		let prevPlay = false;
+
 		const controler = {
 			AMONOS: AMONOS,
 			CORRE: CORRE,
@@ -904,7 +905,12 @@ function loadApp() {
 			play: function(i, name) {
 				if (announceBaraja) {
 					if (prevPlay !== false) {
-						cardAudios[dispLang][currentVoice][prevPlay].pause();
+						if (prevPlay !== undefined) {
+							// As of 2017, HTMLMediaElements are Promise objects that need to be handled
+							prevPlay.then(() => prevPlay.pause());
+						} else {
+							prevPlay.pause();
+						}
 					}
 
 					const source = audioCtx.createMediaElementSource(cardAudios[dispLang][currentVoice][i]);
@@ -912,8 +918,7 @@ function loadApp() {
 
 					// Fallback to the synthesizer if the voice file isn't ready yet
 					try {
-						cardAudios[dispLang][currentVoice][i].play();
-						prevPlay = i;
+						prevPlay = cardAudios[dispLang][currentVoice][i].play();
 					} catch {
 						synth.play(name);
 					}
