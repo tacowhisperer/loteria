@@ -897,7 +897,8 @@ function loadApp() {
 		loadAudios();
 
 		let prevPlay = false;
-
+		const PROMISE = 0;
+		const AUDIO = 1;
 		const controler = {
 			AMONOS: AMONOS,
 			CORRE: CORRE,
@@ -907,7 +908,7 @@ function loadApp() {
 					if (prevPlay !== false) {
 						if (prevPlay !== undefined) {
 							// As of 2017, HTMLMediaElements are Promise objects that need to be handled
-							prevPlay.then(() => prevPlay.pause());
+							prevPlay[PROMISE].then(() => prevPlay[AUDIO].pause());
 						} else {
 							prevPlay.pause();
 						}
@@ -918,7 +919,8 @@ function loadApp() {
 
 					// Fallback to the synthesizer if the voice file isn't ready yet
 					try {
-						prevPlay = cardAudios[dispLang][currentVoice][i].play();
+						const audio = cardAudios[dispLang][currentVoice][i];
+						prevPlay = [audio.play(), audio];
 					} catch {
 						synth.play(name);
 					}
