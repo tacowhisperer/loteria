@@ -1360,6 +1360,7 @@ function loadApp() {
 					timerColor = gameDeck[gameIndex][COLOR];
 
 					// Announce the new card to the players
+					audioCtx = new AudioContext();
 					cardAnnouncer.play(gameDeck[gameIndex][ABS_IDX], gameDeck[gameIndex][NAME]);
 
 					gameIndex++;
@@ -1414,6 +1415,7 @@ function loadApp() {
 			id: 'corre'
 		};
 
+		audioCtx = new AudioContext();
 		cardAnnouncer.play(cardAnnouncer.CORRE, startMsg[dispLang]);
 		const gameLoop = engine(showNextCard, displayCardTime, gameDeck, cardDOMElement, historyQueue).setFire(autoFlip);
 
@@ -2107,18 +2109,6 @@ function loadApp() {
 		menuContainer.children[menuIdx].children[1].blur();
 		onControlItem = false;
 	});
-
-	let audioInitialized = false;
-	const activateAudio = () => {
-		if (!audioInitialized) {
-			// Initialize the audio context for all sounds
-			audioCtx = new AudioContext();
-			audioInitialized = true;
-		}
-	};
-
-	window.addEventListener(activator, activateAudio);
-	window.addEventListener('keydown', activateAudio);
 }
 
 </script>
