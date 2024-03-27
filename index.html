@@ -906,9 +906,9 @@ function loadApp() {
 					if (prevPlay !== false) {
 						if (prevPlay !== undefined) {
 							// As of 2017, HTMLMediaElements are Promise objects that need to be handled
-							prevPlay[PROMISE].resolve().then(() => prevPlay[AUDIO].pause());
+							prevPlay[AUDIO].pause();
 						} else {
-							prevPlay.pause();
+							prevPlay[AUDIO].pause();
 						}
 					}
 
