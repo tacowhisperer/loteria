@@ -912,23 +912,16 @@ function loadApp() {
 						}
 					}
 
-					const audioCtx = new AudioContext();
 					const audio = cardAudios[dispLang][currentVoice][i];
 
 					// Fallback to the synthesizer if the sound file can't play
-					if (audioCtx) {
-						const source = audioCtx.createMediaElementSource(audio);
-						source.connect(audioCtx.destination);
-
-						try {
-							prevPlay = [audio.play(), audio];
-						} catch {
-							prevPlay = false;
-							synth.play(name);
-						}
-					} else {
+					try {
+						prevPlay = [audio.play(), audio];
+					} catch {
+						prevPlay = false;
 						synth.play(name);
 					}
+
 				}
 
 				return this;
