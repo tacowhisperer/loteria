@@ -915,14 +915,19 @@ function loadApp() {
 						}
 					}
 
-					const source = audioCtx.createMediaElementSource(cardAudios[dispLang][currentVoice][i]);
-					source.connect(audioCtx.destination);
+					const audio = cardAudios[dispLang][currentVoice][i];
 
-					// Fallback to the synthesizer if the voice file isn't ready yet
-					try {
-						const audio = cardAudios[dispLang][currentVoice][i];
-						prevPlay = [audio.play(), audio];
-					} catch {
+					// Fallback to the synthesizer if the sound file can't play
+					if (audioCtx) {
+						const source = audioCtx.createMediaElementSource(audio);
+						source.connect(audioCtx.destination);
+
+						try {
+							prevPlay = [audio.play(), audio];
+						} catch {
+							synth.play(name);
+						}
+					} else {
 						synth.play(name);
 					}
 				}
